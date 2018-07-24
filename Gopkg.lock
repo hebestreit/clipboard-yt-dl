@@ -3,6 +3,12 @@
 
 [[projects]]
   branch = "master"
+  name = "github.com/0xAX/notificator"
+  packages = ["."]
+  revision = "88d57ee9043ba88d6a62e437fa15dda1ca0d2b59"
+
+[[projects]]
+  branch = "master"
   name = "github.com/shivylp/clipboard"
   packages = ["."]
   revision = "be3b6bdc0e1508e1df593521ad4c67baa9714ab7"
@@ -10,6 +16,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "adca0ad4a640a0a2105db750038d2def9640674e4f60f7912b3d95a73684f832"
+  inputs-digest = "a725cb467310c4e4a79ef171e7b91e5380a2e2fa5a7c4a04a48ba1857931e3cc"
   solver-name = "gps-cdcl"
   solver-version = 1

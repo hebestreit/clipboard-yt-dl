@@ -1,6 +1,6 @@
 # Clipboard to youtube-dl
 
-This Go application will monitor your clipboard for YouTube urls and automatically starts download with [youtube-dl](https://github.com/rg3/youtube-dl/).
+This Go application will monitor your clipboard for YouTube urls and automatically starts download with [youtube-dl](https://github.com/rg3/youtube-dl/). After download has been finished you'll get a notification with detailed information.
 
 ## Configuration
 
@@ -21,10 +21,13 @@ Run following commands.
     $ cd clipboard-yt-dl
     $ make all
 
-Now you can run this command.
+Now you can run this command and start copying over the world!
 
     $ ./clipboard-yt-dl
 
-# Copyrights
+# Dependencies
 
-I'm using the Go library [github.com/shivylp/clipboard](https://github.com/shivylp/clipboard) in my application for monitoring clipboard which is a fork of [github.com/atotto/clipboard](https://github.com/atotto/clipboard).
+This is a list of dependencies I'm using in this project.
+
+* [github.com/shivylp/clipboard](https://github.com/shivylp/clipboard) for monitoring clipboard which is a fork of [github.com/atotto/clipboard](https://github.com/atotto/clipboard).
+* [github.com/0xAX/notificator](https://github.com/0xAX/notificator) sending notifications

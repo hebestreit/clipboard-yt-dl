@@ -5,12 +5,22 @@ import (
 
 	"github.com/shivylp/clipboard"
 	"net/url"
+	"log"
+	"github.com/0xAX/notificator"
+	"fmt"
 	"os/exec"
-	"os"
+	"encoding/json"
 )
 
-const youtubeDlCmd = "youtube-dl"
-const youtubeHost = "www.youtube.com"
+const (
+	youtubeDlCmd = "youtube-dl"
+)
+
+type Video struct {
+	FullTitle string `json:"fulltitle"`
+	Id        string `json:"id"`
+	Filename  string `json:"_filename"`
+}
 
 func main() {
 	changes := make(chan string, 10)
@@ -26,27 +36,57 @@ func main() {
 			change, ok := <-changes
 			if ok {
 				copiedUrl, err := url.Parse(change)
-				if err != nil {
+				if err != nil || len(copiedUrl.Host) <= 0 {
 					continue
 				}
 
-				if len(copiedUrl.Host) <= 0 {
-					continue
-				}
-
-				switch copiedUrl.Hostname() {
-				case youtubeHost:
-					args := []string{copiedUrl.String()}
-
-					cmd := exec.Command(youtubeDlCmd, args...)
-
-					cmd.Stdout = os.Stdout
-					err := cmd.Run()
-					if err != nil {
-						panic(err)
-					}
-				}
+				go downloadVideo(copiedUrl)
 			}
 		}
 	}
+}
+
+// send push notification with video information
+func pushNotification(video Video) error {
+	notify := notificator.New(notificator.Options{})
+
+	return notify.Push(
+		"Download finished",
+		fmt.Sprintf("Id: %s\n Title: %s\n File: %s", video.Id, video.FullTitle, video.Filename),
+		"",
+		notificator.UR_NORMAL,
+	)
+}
+
+// this method will download copied url
+func downloadVideo(copiedUrl *url.URL) {
+
+	ytHosts := []string{"www.youtube.com", ""}
+	if stringInSlice(copiedUrl.Hostname(), ytHosts) {
+		log.Printf("Downloading %s", copiedUrl.String())
+
+		args := []string{"-j", copiedUrl.String()}
+		output, err := exec.Command(youtubeDlCmd, args...).Output()
+
+		if err != nil {
+			panic(err)
+		}
+
+		var video Video
+		json.Unmarshal(output, &video)
+
+		pushNotification(video)
+	}
+
+	log.Printf("%s is not supported", copiedUrl.String())
+}
+
+// check if string is in list see: https://stackoverflow.com/a/15323988
+func stringInSlice(a string, list []string) bool {
+	for _, b := range list {
+		if b == a {
+			return true
+		}
+	}
+	return false
 }
