@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"os/exec"
 	"encoding/json"
+	"errors"
 )
 
 const (
@@ -52,14 +53,16 @@ func pushNotification(video Video) error {
 
 	return notify.Push(
 		"Download finished",
-		fmt.Sprintf("Id: %s\n Title: %s\n File: %s", video.Id, video.FullTitle, video.Filename),
+		fmt.Sprintf("Id: %s\nTitle: %s\nFile: %s", video.Id, video.FullTitle, video.Filename),
 		"",
 		notificator.UR_NORMAL,
 	)
 }
 
 // this method will download copied url
-func downloadVideo(copiedUrl *url.URL) {
+func downloadVideo(copiedUrl *url.URL) (Video, error) {
+
+	var video Video
 
 	ytHosts := []string{"www.youtube.com", ""}
 	if stringInSlice(copiedUrl.Hostname(), ytHosts) {
@@ -72,13 +75,15 @@ func downloadVideo(copiedUrl *url.URL) {
 			panic(err)
 		}
 
-		var video Video
 		json.Unmarshal(output, &video)
-
-		pushNotification(video)
 	}
 
-	log.Printf("%s is not supported", copiedUrl.String())
+	if video.Id != "" {
+		pushNotification(video)
+		return video, nil
+	}
+
+	return video, errors.New(fmt.Sprintf("%s is not supported", copiedUrl.String()))
 }
 
 // check if string is in list see: https://stackoverflow.com/a/15323988
