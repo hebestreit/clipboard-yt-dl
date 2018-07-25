@@ -118,7 +118,7 @@ func downloadVideo(copiedUrl *url.URL) (Video, error) {
 	if stringInSlice(copiedUrl.Hostname(), ytHosts) {
 		log.Printf("Downloading %s", copiedUrl.String())
 
-		args := []string{"-j", copiedUrl.String()}
+		args := []string{"--print-json", copiedUrl.String()}
 		output, err := exec.Command(youtubeDlCmd, args...).Output()
 
 		if err != nil {
