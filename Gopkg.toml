@@ -36,3 +36,7 @@
 [[constraint]]
   name = "github.com/0xAX/notificator"
   branch = "master"
+
+[[constraint]]
+  name = "github.com/getlantern/systray"
+  branch = "master"

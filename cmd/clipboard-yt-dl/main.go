@@ -11,10 +11,16 @@ import (
 	"os/exec"
 	"encoding/json"
 	"errors"
+	"github.com/getlantern/systray"
+	"github.com/hebestreit/clipboard-yt-dl/assets/icon"
 )
 
 const (
 	youtubeDlCmd = "youtube-dl"
+)
+
+var (
+	directDownload bool
 )
 
 type Video struct {
@@ -28,7 +34,13 @@ func main() {
 	stopCh := make(chan struct{})
 
 	go clipboard.Monitor(time.Second, stopCh, changes)
+	go observeChanges(changes, stopCh)
 
+	systray.Run(onReady, onExit)
+}
+
+// main method to observe changes in clipboard and do stuff
+func observeChanges(changes chan string, stopCh chan struct{})  {
 	for {
 		select {
 		case <-stopCh:
@@ -41,10 +53,48 @@ func main() {
 					continue
 				}
 
-				go downloadVideo(copiedUrl)
+				if directDownload {
+					go downloadVideo(copiedUrl)
+				} else {
+					// TODO add video to systray list for manual download
+				}
 			}
 		}
 	}
+}
+
+//
+func onReady() {
+	directDownload = false
+	systray.SetIcon(icon.Data)
+
+	directDownloadItem := systray.AddMenuItem("Enable direct download", "Download video directly when url has been copied.")
+	systray.AddSeparator()
+	mQuit := systray.AddMenuItem("Quit", "Quits this app")
+
+	go func() {
+		for {
+			select {
+			case <-directDownloadItem.ClickedCh:
+				if !directDownloadItem.Checked() {
+					directDownload = true
+					directDownloadItem.Uncheck()
+					directDownloadItem.SetTitle("Disable direct download")
+				} else {
+					directDownload = false
+					directDownloadItem.Check()
+					directDownloadItem.SetTitle("Enable direct download")
+				}
+			case <-mQuit.ClickedCh:
+				systray.Quit()
+				return
+			}
+		}
+	}()
+}
+
+func onExit() {
+	// Cleaning stuff here.
 }
 
 // send push notification with video information
@@ -72,7 +122,7 @@ func downloadVideo(copiedUrl *url.URL) (Video, error) {
 		output, err := exec.Command(youtubeDlCmd, args...).Output()
 
 		if err != nil {
-			panic(err)
+			panic(output)
 		}
 
 		json.Unmarshal(output, &video)
