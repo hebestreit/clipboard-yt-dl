@@ -40,3 +40,7 @@
 [[constraint]]
   name = "github.com/getlantern/systray"
   branch = "master"
+
+[[constraint]]
+  name = "github.com/beeker1121/goque"
+  version = "2.0.1"
