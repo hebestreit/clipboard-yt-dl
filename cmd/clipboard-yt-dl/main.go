@@ -55,22 +55,22 @@ func observeChanges(changes chan string, stopCh chan struct{}, queue *goque.Queu
 				if err != nil {
 					panic(err)
 				}
+				updateSystray(queue.Length())
 			}
 		}
 	}
 }
 
+// iterate over each item in queue if download is enabled
 func processQueue(queue *goque.Queue) {
 	for {
-		length := queue.Length()
-		//queueLengthMenuItem.SetTitle(fmt.Sprintf("Queued videos: %d", length))
+		time.Sleep(time.Second)
 
-		if length > 0 {
-			//toggleDownloadMenuItem.Show()
-			//clearQueueMenuItem.Show()
-			if !toggleDownload {
-				continue
-			}
+		if !toggleDownload {
+			continue
+		}
+
+		if queue.Length() > 0 {
 			item, err := queue.Dequeue()
 			if err != nil {
 				panic(err)
@@ -82,18 +82,24 @@ func processQueue(queue *goque.Queue) {
 			}
 
 			downloadVideo(copiedUrl)
-		} else {
-			//toggleDownloadMenuItem.Hide()
-			//clearQueueMenuItem.Hide()
+			updateSystray(queue.Length())
 		}
-
-		time.Sleep(time.Second)
 	}
 }
 
-// show icon is systray and init menu
-func onReady() {
+// update systray menu items
+func updateSystray(length uint64) {
+	queueLengthMenuItem.SetTitle(fmt.Sprintf("Queued videos: %d", length))
 
+	if length > 0 {
+		clearQueueMenuItem.Show()
+	} else {
+		clearQueueMenuItem.Hide()
+	}
+}
+
+// initialize menu items and queue
+func onReady() {
 	changes := make(chan string, 10)
 	stopCh := make(chan struct{})
 
@@ -114,10 +120,13 @@ func onReady() {
 
 	toggleDownloadMenuItem = systray.AddMenuItem("Start download", "Process queued videos.")
 	clearQueueMenuItem = systray.AddMenuItem("Clear queue", "Remove all items from queue.")
+	clearQueueMenuItem.Disable()
 
 	systray.AddSeparator()
 
 	quitMenuItem := systray.AddMenuItem("Quit", "Quits this app")
+
+	updateSystray(queue.Length())
 
 	for {
 		select {
@@ -132,7 +141,7 @@ func onReady() {
 				toggleDownload = false
 			}
 		case <-clearQueueMenuItem.ClickedCh:
-			queue.Drop()
+			// TODO implement this
 		case <-quitMenuItem.ClickedCh:
 			systray.Quit()
 			return
