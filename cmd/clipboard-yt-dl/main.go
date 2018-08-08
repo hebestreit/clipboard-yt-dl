@@ -5,19 +5,13 @@ import (
 	"log"
 	"github.com/0xAX/notificator"
 	"fmt"
-	"os/exec"
-	"encoding/json"
-	"errors"
 	"github.com/getlantern/systray"
 	"github.com/hebestreit/clipboard-yt-dl/assets/icon"
 	"github.com/beeker1121/goque"
 	"github.com/shivylp/clipboard"
 	"time"
 	"os"
-)
-
-const (
-	youtubeDlCmd = "youtube-dl"
+	"github.com/hebestreit/clipboard-yt-dl"
 )
 
 var (
@@ -26,12 +20,6 @@ var (
 	toggleDownloadMenuItem *systray.MenuItem
 	clearQueueMenuItem     *systray.MenuItem
 )
-
-type Video struct {
-	FullTitle string `json:"fulltitle"`
-	Id        string `json:"id"`
-	Filename  string `json:"_filename"`
-}
 
 func main() {
 	fileLog, err := os.OpenFile("debug.log", os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0644)
@@ -91,7 +79,9 @@ func processQueue(queue *goque.Queue) {
 				panic(err)
 			}
 
-			downloadVideo(copiedUrl)
+			video := downloadVideo(copiedUrl)
+
+			pushNotification(video)
 			updateSystray(queue.Length())
 		}
 	}
@@ -166,7 +156,7 @@ func onExit() {
 }
 
 // send push notification with video information
-func pushNotification(video Video) error {
+func pushNotification(video clipboard_yt_dl.Video) error {
 	notify := notificator.New(notificator.Options{})
 
 	return notify.Push(
@@ -178,26 +168,17 @@ func pushNotification(video Video) error {
 }
 
 // this method will download copied url
-func downloadVideo(copiedUrl *url.URL) (Video, error) {
-	var video Video
-
+func downloadVideo(copiedUrl *url.URL) (clipboard_yt_dl.Video) {
 	log.Printf("Downloading %s\n", copiedUrl.String())
 
-	args := []string{"--print-json", copiedUrl.String()}
-	output, err := exec.Command(youtubeDlCmd, args...).Output()
+	dl := clipboard_yt_dl.YouTubeDl{}
+	video, err := dl.Download(copiedUrl)
 
 	if err != nil {
-		// TODO throw specific error types like UnsupportedError
-		panic(output)
+		panic(err)
 	}
 
-	json.Unmarshal(output, &video)
+	log.Printf("Finished download %s to \"%s\"\n", copiedUrl.String(), video.Filename)
 
-	if video.Id != "" {
-		log.Printf("Finished download %s to \"%s\"\n", copiedUrl.String(), video.Filename)
-		pushNotification(video)
-		return video, nil
-	}
-
-	return video, errors.New(fmt.Sprintf("%s is not supported", copiedUrl.String()))
+	return video
 }
