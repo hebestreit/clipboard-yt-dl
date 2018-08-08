@@ -13,6 +13,7 @@ import (
 	"github.com/beeker1121/goque"
 	"github.com/shivylp/clipboard"
 	"time"
+	"os"
 )
 
 const (
@@ -33,6 +34,14 @@ type Video struct {
 }
 
 func main() {
+	fileLog, err := os.OpenFile("debug.log", os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0644)
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	defer fileLog.Close()
+	log.SetOutput(fileLog)
+
 	systray.Run(onReady, onExit)
 }
 
@@ -55,6 +64,7 @@ func observeChanges(changes chan string, stopCh chan struct{}, queue *goque.Queu
 				if err != nil {
 					panic(err)
 				}
+				log.Printf("Queued %s\n", copiedUrl.String())
 				updateSystray(queue.Length())
 			}
 		}
@@ -171,34 +181,23 @@ func pushNotification(video Video) error {
 func downloadVideo(copiedUrl *url.URL) (Video, error) {
 	var video Video
 
-	ytHosts := []string{"www.youtube.com", ""}
-	if stringInSlice(copiedUrl.Hostname(), ytHosts) {
-		log.Printf("Downloading %s", copiedUrl.String())
+	log.Printf("Downloading %s\n", copiedUrl.String())
 
-		args := []string{"--print-json", copiedUrl.String()}
-		output, err := exec.Command(youtubeDlCmd, args...).Output()
+	args := []string{"--print-json", copiedUrl.String()}
+	output, err := exec.Command(youtubeDlCmd, args...).Output()
 
-		if err != nil {
-			panic(output)
-		}
-
-		json.Unmarshal(output, &video)
+	if err != nil {
+		// TODO throw specific error types like UnsupportedError
+		panic(output)
 	}
 
+	json.Unmarshal(output, &video)
+
 	if video.Id != "" {
+		log.Printf("Finished download %s to \"%s\"\n", copiedUrl.String(), video.Filename)
 		pushNotification(video)
 		return video, nil
 	}
 
 	return video, errors.New(fmt.Sprintf("%s is not supported", copiedUrl.String()))
-}
-
-// check if string is in list see: https://stackoverflow.com/a/15323988
-func stringInSlice(a string, list []string) bool {
-	for _, b := range list {
-		if b == a {
-			return true
-		}
-	}
-	return false
 }
