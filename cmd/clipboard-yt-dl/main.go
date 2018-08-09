@@ -1,46 +1,39 @@
 package main
 
 import (
-	"time"
-
-	"github.com/shivylp/clipboard"
 	"net/url"
 	"log"
 	"github.com/0xAX/notificator"
 	"fmt"
-	"os/exec"
-	"encoding/json"
-	"errors"
 	"github.com/getlantern/systray"
 	"github.com/hebestreit/clipboard-yt-dl/assets/icon"
-)
-
-const (
-	youtubeDlCmd = "youtube-dl"
+	"github.com/shivylp/clipboard"
+	"time"
+	"github.com/hebestreit/clipboard-yt-dl"
+	"os"
 )
 
 var (
-	directDownload bool
+	clipboardYtDl          *clipboard_yt_dl.ClipboardYtDl
+	queueLengthMenuItem    *systray.MenuItem
+	toggleDownloadMenuItem *systray.MenuItem
+	clearQueueMenuItem     *systray.MenuItem
 )
 
-type Video struct {
-	FullTitle string `json:"fulltitle"`
-	Id        string `json:"id"`
-	Filename  string `json:"_filename"`
-}
-
 func main() {
-	changes := make(chan string, 10)
-	stopCh := make(chan struct{})
+	fileLog, err := os.OpenFile("debug.log", os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0644)
+	if err != nil {
+		log.Fatalln(err)
+	}
 
-	go clipboard.Monitor(time.Second, stopCh, changes)
-	go observeChanges(changes, stopCh)
+	defer fileLog.Close()
+	log.SetOutput(fileLog)
 
 	systray.Run(onReady, onExit)
 }
 
 // main method to observe changes in clipboard and do stuff
-func observeChanges(changes chan string, stopCh chan struct{})  {
+func observeChanges(changes chan string, stopCh chan struct{}, clipboardYtDl *clipboard_yt_dl.ClipboardYtDl) {
 	for {
 		select {
 		case <-stopCh:
@@ -53,52 +46,87 @@ func observeChanges(changes chan string, stopCh chan struct{})  {
 					continue
 				}
 
-				if directDownload {
-					go downloadVideo(copiedUrl)
-				} else {
-					// TODO add video to systray list for manual download
+				_, err = clipboardYtDl.EnqueueVideo(copiedUrl)
+
+				if err != nil {
+					panic(err)
 				}
+
+				log.Printf("INFO: %s queued\n", copiedUrl.String())
+				updateSystray(clipboardYtDl.VideoLength())
 			}
 		}
 	}
 }
 
-//
-func onReady() {
-	directDownload = false
-	systray.SetIcon(icon.Data)
+// update systray menu items
+func updateSystray(length uint64) {
+	queueLengthMenuItem.SetTitle(fmt.Sprintf("Queued videos: %d", length))
 
-	directDownloadItem := systray.AddMenuItem("Enable direct download", "Download video directly when url has been copied.")
-	systray.AddSeparator()
-	mQuit := systray.AddMenuItem("Quit", "Quits this app")
-
-	go func() {
-		for {
-			select {
-			case <-directDownloadItem.ClickedCh:
-				if !directDownloadItem.Checked() {
-					directDownload = true
-					directDownloadItem.Uncheck()
-					directDownloadItem.SetTitle("Disable direct download")
-				} else {
-					directDownload = false
-					directDownloadItem.Check()
-					directDownloadItem.SetTitle("Enable direct download")
-				}
-			case <-mQuit.ClickedCh:
-				systray.Quit()
-				return
-			}
-		}
-	}()
+	if length > 0 {
+		clearQueueMenuItem.Show()
+	} else {
+		clearQueueMenuItem.Hide()
+	}
 }
 
+// initialize menu items and queue
+func onReady() {
+	changes := make(chan string, 10)
+	stopCh := make(chan struct{})
+
+	clipboardYtDl = clipboard_yt_dl.NewClipboardYtDl()
+
+	go clipboard.Monitor(time.Second, stopCh, changes)
+	go observeChanges(changes, stopCh, clipboardYtDl)
+
+	systray.SetIcon(icon.Data)
+
+	queueLengthMenuItem = systray.AddMenuItem("Queued videos: %d", "Length of queued videos.")
+	queueLengthMenuItem.Disable()
+
+	toggleDownloadMenuItem = systray.AddMenuItem("Start download", "Process queued videos.")
+	clearQueueMenuItem = systray.AddMenuItem("Clear queue", "Remove all items from queue.")
+	clearQueueMenuItem.Disable()
+
+	systray.AddSeparator()
+
+	quitMenuItem := systray.AddMenuItem("Quit", "Quits this app")
+
+	updateSystray(clipboardYtDl.VideoLength())
+
+	for {
+		select {
+		case <-toggleDownloadMenuItem.ClickedCh:
+			if !toggleDownloadMenuItem.Checked() {
+				toggleDownloadMenuItem.Check()
+				toggleDownloadMenuItem.SetTitle("Stop download")
+
+				clipboardYtDl.StartQueue(onVideoDownloaded)
+			} else {
+				toggleDownloadMenuItem.Uncheck()
+				toggleDownloadMenuItem.SetTitle("Start download")
+
+				clipboardYtDl.StopQueue()
+			}
+		case <-clearQueueMenuItem.ClickedCh:
+			// TODO implement this
+		case <-quitMenuItem.ClickedCh:
+			systray.Quit()
+			return
+		}
+	}
+}
+
+// on exit method when app has been closed
 func onExit() {
 	// Cleaning stuff here.
+	clipboardYtDl.CloseQueue()
+	fmt.Print("exit")
 }
 
 // send push notification with video information
-func pushNotification(video Video) error {
+func pushNotification(video *clipboard_yt_dl.Video) error {
 	notify := notificator.New(notificator.Options{})
 
 	return notify.Push(
@@ -109,39 +137,8 @@ func pushNotification(video Video) error {
 	)
 }
 
-// this method will download copied url
-func downloadVideo(copiedUrl *url.URL) (Video, error) {
-
-	var video Video
-
-	ytHosts := []string{"www.youtube.com", ""}
-	if stringInSlice(copiedUrl.Hostname(), ytHosts) {
-		log.Printf("Downloading %s", copiedUrl.String())
-
-		args := []string{"--print-json", copiedUrl.String()}
-		output, err := exec.Command(youtubeDlCmd, args...).Output()
-
-		if err != nil {
-			panic(output)
-		}
-
-		json.Unmarshal(output, &video)
-	}
-
-	if video.Id != "" {
-		pushNotification(video)
-		return video, nil
-	}
-
-	return video, errors.New(fmt.Sprintf("%s is not supported", copiedUrl.String()))
-}
-
-// check if string is in list see: https://stackoverflow.com/a/15323988
-func stringInSlice(a string, list []string) bool {
-	for _, b := range list {
-		if b == a {
-			return true
-		}
-	}
-	return false
+// callback when video has been downloaded by queue
+func onVideoDownloaded(video *clipboard_yt_dl.Video, length uint64) {
+	pushNotification(video)
+	updateSystray(length)
 }

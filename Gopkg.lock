@@ -8,6 +8,12 @@
   revision = "88d57ee9043ba88d6a62e437fa15dda1ca0d2b59"
 
 [[projects]]
+  name = "github.com/beeker1121/goque"
+  packages = ["."]
+  revision = "e1e63ca63c14b41209e160f54c8e7669564eacc4"
+  version = "v2.0.1"
+
+[[projects]]
   branch = "master"
   name = "github.com/getlantern/context"
   packages = ["."]
@@ -63,6 +69,12 @@
 
 [[projects]]
   branch = "master"
+  name = "github.com/golang/snappy"
+  packages = ["."]
+  revision = "2e65f85255dbc3072edf28d6b5b8efc472979f5a"
+
+[[projects]]
+  branch = "master"
   name = "github.com/oxtoacart/bpool"
   packages = ["."]
   revision = "4e1c5567d7c2dd59fa4c7c83d34c2f3528b025d6"
@@ -73,9 +85,28 @@
   packages = ["."]
   revision = "be3b6bdc0e1508e1df593521ad4c67baa9714ab7"
 
+[[projects]]
+  branch = "master"
+  name = "github.com/syndtr/goleveldb"
+  packages = [
+    "leveldb",
+    "leveldb/cache",
+    "leveldb/comparer",
+    "leveldb/errors",
+    "leveldb/filter",
+    "leveldb/iterator",
+    "leveldb/journal",
+    "leveldb/memdb",
+    "leveldb/opt",
+    "leveldb/storage",
+    "leveldb/table",
+    "leveldb/util"
+  ]
+  revision = "c4c61651e9e37fa117f53c5a906d3b63090d8445"
+
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "ac6a64497250298ea85625cfe0943d5b6d721e317915dcc4285bddd0a8dad62e"
+  inputs-digest = "58085472af7643a6bc2b51cb24d3c504765cd9b6e768c32d228c0270031bffcd"
   solver-name = "gps-cdcl"
   solver-version = 1
