@@ -9,11 +9,12 @@ import (
 	"github.com/hebestreit/clipboard-yt-dl/assets/icon"
 	"github.com/shivylp/clipboard"
 	"time"
-	"os"
 	"github.com/hebestreit/clipboard-yt-dl"
+	"os"
 )
 
 var (
+	clipboardYtDl          *clipboard_yt_dl.ClipboardYtDl
 	queueLengthMenuItem    *systray.MenuItem
 	toggleDownloadMenuItem *systray.MenuItem
 	clearQueueMenuItem     *systray.MenuItem
@@ -51,7 +52,7 @@ func observeChanges(changes chan string, stopCh chan struct{}, clipboardYtDl *cl
 					panic(err)
 				}
 
-				log.Printf("Queued %s\n", copiedUrl.String())
+				log.Printf("INFO: %s queued\n", copiedUrl.String())
 				updateSystray(clipboardYtDl.VideoLength())
 			}
 		}
@@ -74,7 +75,7 @@ func onReady() {
 	changes := make(chan string, 10)
 	stopCh := make(chan struct{})
 
-	clipboardYtDl := clipboard_yt_dl.NewClipboardYtDl()
+	clipboardYtDl = clipboard_yt_dl.NewClipboardYtDl()
 
 	go clipboard.Monitor(time.Second, stopCh, changes)
 	go observeChanges(changes, stopCh, clipboardYtDl)
@@ -120,11 +121,12 @@ func onReady() {
 // on exit method when app has been closed
 func onExit() {
 	// Cleaning stuff here.
+	clipboardYtDl.CloseQueue()
 	fmt.Print("exit")
 }
 
 // send push notification with video information
-func pushNotification(video clipboard_yt_dl.Video) error {
+func pushNotification(video *clipboard_yt_dl.Video) error {
 	notify := notificator.New(notificator.Options{})
 
 	return notify.Push(
@@ -136,7 +138,7 @@ func pushNotification(video clipboard_yt_dl.Video) error {
 }
 
 // callback when video has been downloaded by queue
-func onVideoDownloaded(video clipboard_yt_dl.Video, length uint64) {
+func onVideoDownloaded(video *clipboard_yt_dl.Video, length uint64) {
 	pushNotification(video)
 	updateSystray(length)
 }
