@@ -20,8 +20,9 @@ RUN pacman -Sy \
   llvm \
   mingw-w64-gcc \
   gtk3 \
-  cmake \
-  go
+  go \
+  cmake
+
 WORKDIR /tmp
 
 # install macOS cross compilation tools

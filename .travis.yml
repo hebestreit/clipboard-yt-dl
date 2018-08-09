@@ -10,3 +10,16 @@ before_install:
 
 script:
 - make
+
+deploy:
+  provider: releases
+  prerelease: true
+  api_key:
+    secure: "change-this"
+    file:
+    - "clipboard-yt-dl_linux"
+    - "clipboard-yt-dl_windows.exe"
+  skip_cleanup: true
+  on:
+#    branch: master
+    tags: false
