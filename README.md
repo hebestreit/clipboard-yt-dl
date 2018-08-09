@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/hebestreit/clipboard-yt-dl.svg?branch=master)](https://travis-ci.org/hebestreit/clipboard-yt-dl)
+
 # Clipboard to youtube-dl
 
 This Go application will monitor your clipboard for YouTube urls and automatically starts download with [youtube-dl](https://github.com/rg3/youtube-dl/). After download has been finished you'll get a notification with detailed information.

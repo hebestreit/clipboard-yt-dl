@@ -25,13 +25,13 @@ RUN pacman -Sy \
 WORKDIR /tmp
 
 # install macOS cross compilation tools
-RUN sudo -u nobody git clone https://aur.archlinux.org/osxcross-git.git \
-  && cd osxcross-git \
-  && sudo -u nobody makepkg --noconfirm -s \
-  && pacman -U --noconfirm osxcross-git*.pkg.tar.xz \
-  && cd .. \
-  && rm -Rf osxcross-git
-ENV PATH /usr/local/osx-ndk-x86/bin/:$PATH
+#RUN sudo -u nobody git clone https://aur.archlinux.org/osxcross-git.git \
+#  && cd osxcross-git \
+#  && sudo -u nobody makepkg --noconfirm -s \
+#  && pacman -U --noconfirm osxcross-git*.pkg.tar.xz \
+#  && cd .. \
+#  && rm -Rf osxcross-git
+#ENV PATH /usr/local/osx-ndk-x86/bin/:$PATH
 
 # setup go environment and install go dep
 ENV GOPATH /go

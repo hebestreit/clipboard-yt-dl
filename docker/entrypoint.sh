@@ -22,5 +22,5 @@ GOOS=linux CC=clang CXX=clang++ go build -o "${BUILD_OUTPUT}_linux" ${PACKAGE} $
 echo "Building windows binary"
 GOOS=windows CC=x86_64-w64-mingw32-gcc CXX=x86_64-w64-mingw32-g++ go build -o "${BUILD_OUTPUT}_windows.exe" -ldflags "-H=windowsgui -extldflags=-s" ${PACKAGE} $*
 
-echo "Building darwin binary"
-GOOS=darwin CGO_LDFLAGS_ALLOW="-mmacosx-version-min.*" CC=o64-clang CXX=o64-clang++ go build -o "${BUILD_OUTPUT}_darwin.app" ${PACKAGE} $*
+#echo "Building darwin binary"
+#GOOS=darwin CGO_LDFLAGS_ALLOW="-mmacosx-version-min.*" CC=o64-clang CXX=o64-clang++ go build -o "${BUILD_OUTPUT}_darwin.app" ${PACKAGE} $*
