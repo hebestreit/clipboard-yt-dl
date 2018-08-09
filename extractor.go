@@ -2,7 +2,7 @@ package clipboard_yt_dl
 
 import (
 	"net/url"
-		"os/exec"
+	"os/exec"
 	"encoding/json"
 )
 

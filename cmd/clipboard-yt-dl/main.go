@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"github.com/getlantern/systray"
 	"github.com/hebestreit/clipboard-yt-dl/assets/icon"
-	"github.com/beeker1121/goque"
 	"github.com/shivylp/clipboard"
 	"time"
 	"os"
@@ -15,7 +14,6 @@ import (
 )
 
 var (
-	toggleDownload         = false
 	queueLengthMenuItem    *systray.MenuItem
 	toggleDownloadMenuItem *systray.MenuItem
 	clearQueueMenuItem     *systray.MenuItem
@@ -34,7 +32,7 @@ func main() {
 }
 
 // main method to observe changes in clipboard and do stuff
-func observeChanges(changes chan string, stopCh chan struct{}, queue *goque.Queue) {
+func observeChanges(changes chan string, stopCh chan struct{}, clipboardYtDl *clipboard_yt_dl.ClipboardYtDl) {
 	for {
 		select {
 		case <-stopCh:
@@ -47,42 +45,15 @@ func observeChanges(changes chan string, stopCh chan struct{}, queue *goque.Queu
 					continue
 				}
 
-				_, err = queue.EnqueueString(copiedUrl.String())
+				_, err = clipboardYtDl.EnqueueVideo(copiedUrl)
 
 				if err != nil {
 					panic(err)
 				}
+
 				log.Printf("Queued %s\n", copiedUrl.String())
-				updateSystray(queue.Length())
+				updateSystray(clipboardYtDl.VideoLength())
 			}
-		}
-	}
-}
-
-// iterate over each item in queue if download is enabled
-func processQueue(queue *goque.Queue) {
-	for {
-		time.Sleep(time.Second)
-
-		if !toggleDownload {
-			continue
-		}
-
-		if queue.Length() > 0 {
-			item, err := queue.Dequeue()
-			if err != nil {
-				panic(err)
-			}
-
-			copiedUrl, err := url.Parse(item.ToString())
-			if err != nil {
-				panic(err)
-			}
-
-			video := downloadVideo(copiedUrl)
-
-			pushNotification(video)
-			updateSystray(queue.Length())
 		}
 	}
 }
@@ -103,15 +74,10 @@ func onReady() {
 	changes := make(chan string, 10)
 	stopCh := make(chan struct{})
 
-	queue, err := goque.OpenQueue("data_dir")
-	if err != nil {
-		panic(err)
-	}
-	defer queue.Close()
+	clipboardYtDl := clipboard_yt_dl.NewClipboardYtDl()
 
 	go clipboard.Monitor(time.Second, stopCh, changes)
-	go observeChanges(changes, stopCh, queue)
-	go processQueue(queue)
+	go observeChanges(changes, stopCh, clipboardYtDl)
 
 	systray.SetIcon(icon.Data)
 
@@ -126,7 +92,7 @@ func onReady() {
 
 	quitMenuItem := systray.AddMenuItem("Quit", "Quits this app")
 
-	updateSystray(queue.Length())
+	updateSystray(clipboardYtDl.VideoLength())
 
 	for {
 		select {
@@ -134,11 +100,13 @@ func onReady() {
 			if !toggleDownloadMenuItem.Checked() {
 				toggleDownloadMenuItem.Check()
 				toggleDownloadMenuItem.SetTitle("Stop download")
-				toggleDownload = true
+
+				clipboardYtDl.StartQueue(onVideoDownloaded)
 			} else {
 				toggleDownloadMenuItem.Uncheck()
 				toggleDownloadMenuItem.SetTitle("Start download")
-				toggleDownload = false
+
+				clipboardYtDl.StopQueue()
 			}
 		case <-clearQueueMenuItem.ClickedCh:
 			// TODO implement this
@@ -167,18 +135,8 @@ func pushNotification(video clipboard_yt_dl.Video) error {
 	)
 }
 
-// this method will download copied url
-func downloadVideo(copiedUrl *url.URL) (clipboard_yt_dl.Video) {
-	log.Printf("Downloading %s\n", copiedUrl.String())
-
-	dl := clipboard_yt_dl.YouTubeDl{}
-	video, err := dl.Download(copiedUrl)
-
-	if err != nil {
-		panic(err)
-	}
-
-	log.Printf("Finished download %s to \"%s\"\n", copiedUrl.String(), video.Filename)
-
-	return video
+// callback when video has been downloaded by queue
+func onVideoDownloaded(video clipboard_yt_dl.Video, length uint64) {
+	pushNotification(video)
+	updateSystray(length)
 }
