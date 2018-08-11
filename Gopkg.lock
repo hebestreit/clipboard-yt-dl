@@ -3,90 +3,119 @@
 
 [[projects]]
   branch = "master"
+  digest = "1:592569a314f98130ac3085243fdbe46f278d3e54c95ce9e0bde9c6b908db82c4"
   name = "github.com/0xAX/notificator"
   packages = ["."]
+  pruneopts = "UT"
   revision = "88d57ee9043ba88d6a62e437fa15dda1ca0d2b59"
 
 [[projects]]
+  digest = "1:2734f64badcd6ff46a23ef1864621a0c42b694c91383dc18c6b375bfe1fe9984"
   name = "github.com/beeker1121/goque"
   packages = ["."]
+  pruneopts = "UT"
   revision = "e1e63ca63c14b41209e160f54c8e7669564eacc4"
   version = "v2.0.1"
 
 [[projects]]
   branch = "master"
+  digest = "1:54d414482fb70eaccdd6e6fca023986b16ab3004e5b499b6bc3667d89574fc07"
   name = "github.com/getlantern/context"
   packages = ["."]
+  pruneopts = "UT"
   revision = "624d99b1798d7c5375ea1d3ca4c5b04d58f7c775"
 
 [[projects]]
   branch = "master"
+  digest = "1:5df6f40bc793fa4ad53f1228688a0bda3e4f90df2d2305cdfaeaaef636b0aac1"
   name = "github.com/getlantern/errors"
   packages = ["."]
+  pruneopts = "UT"
   revision = "e9c0296368b736086adb20832549567064224854"
 
 [[projects]]
   branch = "master"
+  digest = "1:99c1c515274e6c3ead7bf68dcc77f56131d0f937adeb6808ba86e0911adfdda7"
   name = "github.com/getlantern/filepersist"
   packages = ["."]
+  pruneopts = "UT"
   revision = "c5f0cd24e7991579ba6f5f1bd20a1ad2c9f06cd4"
 
 [[projects]]
   branch = "master"
+  digest = "1:128515bf48085482f3b1269701a0be1b119087447d8f666a27211bdacf0b5dc9"
   name = "github.com/getlantern/golog"
   packages = ["."]
+  pruneopts = "UT"
   revision = "cca714f7feb5df8e455f409b549d384441ac4578"
 
 [[projects]]
   branch = "master"
+  digest = "1:f12c7103ba4c446c6822f331ada3e5f0c3626be111a115e92700cd2724bca9ed"
   name = "github.com/getlantern/hex"
   packages = ["."]
+  pruneopts = "UT"
   revision = "083fba3033ad473db3dd31c9bb368473d37581a7"
 
 [[projects]]
   branch = "master"
+  digest = "1:916634881c70eb3c2201419786896254d601a786a9124e662a079d4649df160d"
   name = "github.com/getlantern/hidden"
   packages = ["."]
+  pruneopts = "UT"
   revision = "d52a649ab33af200943bb599898dbdcfdbc94cb7"
 
 [[projects]]
   branch = "master"
+  digest = "1:f84e2692edf40301ae0ce718695cde032f5c6964e4fad812749eb1eaefa95785"
   name = "github.com/getlantern/ops"
   packages = ["."]
+  pruneopts = "UT"
   revision = "37353306c90844c8e0591956f56611f46299d202"
 
 [[projects]]
+  digest = "1:6f594606795392c9cec33deb4b8106e75851a5c16179130066f3b6f87388572a"
   name = "github.com/getlantern/stack"
   packages = ["."]
+  pruneopts = "UT"
   revision = "02f928aad224fbccd50d66edd776fc9d1e9f2f2b"
   version = "1.5.1"
 
 [[projects]]
   branch = "master"
+  digest = "1:a4254554373bc3b6ecacbc95fb034f034f44cc9526bcf715d13920eb1f497960"
   name = "github.com/getlantern/systray"
   packages = ["."]
+  pruneopts = "UT"
   revision = "62af9eb8030c168caa78856c967e6d2c4a7d813e"
 
 [[projects]]
   branch = "master"
+  digest = "1:4a0c6bb4805508a6287675fac876be2ac1182539ca8a32468d8128882e9d5009"
   name = "github.com/golang/snappy"
   packages = ["."]
+  pruneopts = "UT"
   revision = "2e65f85255dbc3072edf28d6b5b8efc472979f5a"
 
 [[projects]]
   branch = "master"
+  digest = "1:df63a8ddf6fd32f2cdf09db1ada151c8a27f5fe2516ee977b72d6a0707e94910"
   name = "github.com/oxtoacart/bpool"
   packages = ["."]
+  pruneopts = "UT"
   revision = "4e1c5567d7c2dd59fa4c7c83d34c2f3528b025d6"
 
 [[projects]]
   branch = "master"
+  digest = "1:0f22bed796011ec63c2ccfb4b8d6687bab671cc61547bff4c706db592dc7c1d4"
   name = "github.com/shivylp/clipboard"
   packages = ["."]
+  pruneopts = "UT"
   revision = "be3b6bdc0e1508e1df593521ad4c67baa9714ab7"
 
 [[projects]]
   branch = "master"
+  digest = "1:b3cfb8d82b1601a846417c3f31c03a7961862cb2c98dcf0959c473843e6d9a2b"
   name = "github.com/syndtr/goleveldb"
   packages = [
     "leveldb",
@@ -100,13 +129,20 @@
     "leveldb/opt",
     "leveldb/storage",
     "leveldb/table",
-    "leveldb/util"
+    "leveldb/util",
   ]
+  pruneopts = "UT"
   revision = "c4c61651e9e37fa117f53c5a906d3b63090d8445"
 
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "58085472af7643a6bc2b51cb24d3c504765cd9b6e768c32d228c0270031bffcd"
+  input-imports = [
+    "github.com/0xAX/notificator",
+    "github.com/beeker1121/goque",
+    "github.com/getlantern/errors",
+    "github.com/getlantern/systray",
+    "github.com/shivylp/clipboard",
+  ]
   solver-name = "gps-cdcl"
   solver-version = 1
