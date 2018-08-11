@@ -7,7 +7,10 @@ import (
 	"github.com/hebestreit/clipboard-yt-dl"
 	"github.com/hebestreit/clipboard-yt-dl/assets/icon"
 	"github.com/shivylp/clipboard"
+	"io"
+	"io/ioutil"
 	"log"
+	"net/http"
 	"net/url"
 	"os"
 	"runtime"
@@ -136,7 +139,35 @@ func onExit() {
 
 // send push notification with video information
 func pushNotification(video *clipboard_yt_dl.Video) error {
-	return beeep.Notify("Download finished", fmt.Sprintf("Id: %s\nTitle: %s\nFile: %s", video.Id, video.FullTitle, video.Filename), "")
+	var thumbnail string
+	if video.ThumbnailURL != "" {
+		var err error
+		thumbnail, err = downloadThumbnail(video)
+		if err != nil {
+			panic(err)
+		}
+	}
+
+	return beeep.Notify("Download finished", video.FullTitle, thumbnail)
+}
+
+// download video thumbnail to temporary file
+func downloadThumbnail(video *clipboard_yt_dl.Video) (string, error) {
+	tmpFile, err := ioutil.TempFile("", video.Id)
+	defer tmpFile.Close()
+
+	resp, err := http.Get(video.ThumbnailURL)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+
+	_, err = io.Copy(tmpFile, resp.Body)
+	if err != nil {
+		return "", err
+	}
+
+	return tmpFile.Name(), nil
 }
 
 // callback when video has been downloaded by queue

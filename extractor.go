@@ -22,9 +22,10 @@ var (
 )
 
 type Video struct {
-	FullTitle string `json:"fulltitle"`
-	Id        string `json:"id"`
-	Filename  string `json:"_filename"`
+	FullTitle    string `json:"fulltitle"`
+	Id           string `json:"id"`
+	Filename     string `json:"_filename"`
+	ThumbnailURL string `json:"thumbnail"`
 }
 
 type Extractor interface {
@@ -40,7 +41,7 @@ func (y *YouTubeDl) Download(url *url.URL) (*Video, error) {
 		panic(CmdNotFoundInPath)
 	}
 
-	output, err := runCmd([]string{"--print-json", url.String()})
+	output, err := runCmd([]string{"--print-json", "--no-warnings", url.String()})
 
 	if err != nil {
 		s := string(output)
