@@ -7,6 +7,7 @@ import (
 	"net/url"
 	"os/exec"
 	"strings"
+	"syscall"
 )
 
 const (
@@ -39,8 +40,7 @@ func (y *YouTubeDl) Download(url *url.URL) (*Video, error) {
 		panic(CmdNotFoundInPath)
 	}
 
-	args := []string{"--print-json", url.String()}
-	output, err := exec.Command(youtubeDlCmd, args...).CombinedOutput()
+	output, err := runCmd([]string{"--print-json", url.String()})
 
 	if err != nil {
 		s := string(output)
@@ -65,9 +65,19 @@ func (y *YouTubeDl) Download(url *url.URL) (*Video, error) {
 	return &video, nil
 }
 
+// run youtube-dl command
+func runCmd(args []string) ([]byte, error) {
+	cmd := exec.Command(youtubeDlCmd, args...)
+	cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
+
+	return cmd.CombinedOutput()
+}
+
 // Checks if youtube-dl exists
 func isCommandAvailable() bool {
-	if err := exec.Command(youtubeDlCmd, "--version").Run(); err != nil {
+	_, err := runCmd([]string{"--version"})
+
+	if err != nil {
 		return false
 	}
 

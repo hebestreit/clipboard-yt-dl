@@ -58,5 +58,6 @@ For Windows check this answer on [stackoverflow.com](https://stackoverflow.com/a
 This is a list of dependencies I'm using in this project.
 
 * [github.com/shivylp/clipboard](https://github.com/shivylp/clipboard) for monitoring clipboard which is a fork of [github.com/atotto/clipboard](https://github.com/atotto/clipboard).
-* [github.com/0xAX/notificator](https://github.com/0xAX/notificator) sending notifications
+* [github.com/gen2brain/beeep](https://github.com/gen2brain/beeep) sending notifications
+** currently I'm using my fork of [github.com/go-toast/toast](https://github.com/go-toast/toast) to fix flashing PowerShell on Windows
 * [github.com/getlantern/systray](https://github.com/getlantern/systray) menu item in systray for user interactions

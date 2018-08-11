@@ -178,12 +178,13 @@
   revision = "98c5dad5d1a0e8a73845ecc8897d0bd56586511d"
 
 [[projects]]
-  branch = "v1"
-  digest = "1:341765c7e47a405badb01328b2fbdbdc8e4b4608eff53743efd9bd838c1318ad"
+  branch = "bugfix/flashing-powershell-console"
+  digest = "1:b71ccd8615521db4ea2f9381f55780a1312654f5d8431d2e58eca51c74110de2"
   name = "gopkg.in/toast.v1"
   packages = ["."]
   pruneopts = "UT"
-  revision = "b700e246b8b6d3e13554091e540e1019e26389f1"
+  revision = "4e8ea83e2e17e025f1ccb61a1024991c3caa9004"
+  source = "github.com/hebestreit/toast.git"
 
 [solve-meta]
   analyzer-name = "dep"
