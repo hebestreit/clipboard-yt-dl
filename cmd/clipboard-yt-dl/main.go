@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"github.com/0xAX/notificator"
+	"github.com/gen2brain/beeep"
 	"github.com/getlantern/systray"
 	"github.com/hebestreit/clipboard-yt-dl"
 	"github.com/hebestreit/clipboard-yt-dl/assets/icon"
@@ -124,14 +124,7 @@ func onExit() {
 
 // send push notification with video information
 func pushNotification(video *clipboard_yt_dl.Video) error {
-	notify := notificator.New(notificator.Options{})
-
-	return notify.Push(
-		"Download finished",
-		fmt.Sprintf("Id: %s\nTitle: %s\nFile: %s", video.Id, video.FullTitle, video.Filename),
-		"",
-		notificator.UR_NORMAL,
-	)
+	return beeep.Notify("Download finished", fmt.Sprintf("Id: %s\nTitle: %s\nFile: %s", video.Id, video.FullTitle, video.Filename), "")
 }
 
 // callback when video has been downloaded by queue

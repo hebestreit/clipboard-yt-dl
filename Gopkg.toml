@@ -34,7 +34,7 @@
   branch = "master"
 
 [[constraint]]
-  name = "github.com/0xAX/notificator"
+  name = "github.com/gen2brain/beeep"
   branch = "master"
 
 [[constraint]]

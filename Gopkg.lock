@@ -2,20 +2,20 @@
 
 
 [[projects]]
-  branch = "master"
-  digest = "1:592569a314f98130ac3085243fdbe46f278d3e54c95ce9e0bde9c6b908db82c4"
-  name = "github.com/0xAX/notificator"
-  packages = ["."]
-  pruneopts = "UT"
-  revision = "88d57ee9043ba88d6a62e437fa15dda1ca0d2b59"
-
-[[projects]]
   digest = "1:2734f64badcd6ff46a23ef1864621a0c42b694c91383dc18c6b375bfe1fe9984"
   name = "github.com/beeker1121/goque"
   packages = ["."]
   pruneopts = "UT"
   revision = "e1e63ca63c14b41209e160f54c8e7669564eacc4"
   version = "v2.0.1"
+
+[[projects]]
+  branch = "master"
+  digest = "1:62cb8d96ecc9f9c30f2e4746e4107f498bcbcfb130037c1cc5564408d516b521"
+  name = "github.com/gen2brain/beeep"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "4e430518395f1fa4d699f30e8d9420218dd311cd"
 
 [[projects]]
   branch = "master"
@@ -90,12 +90,44 @@
   revision = "62af9eb8030c168caa78856c967e6d2c4a7d813e"
 
 [[projects]]
+  digest = "1:57fa4c058c21ce25d0b7272518dd746065117abf6cc706158b0d361202024520"
+  name = "github.com/godbus/dbus"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "a389bdde4dd695d414e47b755e95e72b7826432c"
+  version = "v4.1.0"
+
+[[projects]]
   branch = "master"
   digest = "1:4a0c6bb4805508a6287675fac876be2ac1182539ca8a32468d8128882e9d5009"
   name = "github.com/golang/snappy"
   packages = ["."]
   pruneopts = "UT"
   revision = "2e65f85255dbc3072edf28d6b5b8efc472979f5a"
+
+[[projects]]
+  branch = "master"
+  digest = "1:f14d1b50e0075fb00177f12a96dd7addf93d1e2883c25befd17285b779549795"
+  name = "github.com/gopherjs/gopherjs"
+  packages = ["js"]
+  pruneopts = "UT"
+  revision = "0892b62f0d9fb5857760c3cfca837207185117ee"
+
+[[projects]]
+  digest = "1:e5998225759cf350dbee3e8ed69b0ca549bb52dd71edf937800fa46d39502db6"
+  name = "github.com/gopherjs/gopherwasm"
+  packages = ["js"]
+  pruneopts = "UT"
+  revision = "f02b5938d19774383abccdfe0271e1a40651b4ad"
+  version = "v0.1.1"
+
+[[projects]]
+  branch = "master"
+  digest = "1:0e1e5f960c58fdc677212fcc70e55042a0084d367623e51afbdb568963832f5d"
+  name = "github.com/nu7hatch/gouuid"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "179d4d0c4d8d407a32af483c2354df1d2c91e6c3"
 
 [[projects]]
   branch = "master"
@@ -134,12 +166,31 @@
   pruneopts = "UT"
   revision = "c4c61651e9e37fa117f53c5a906d3b63090d8445"
 
+[[projects]]
+  branch = "master"
+  digest = "1:c2ab3e05d89e8743b96850cf0715a06763b375a28fd68ecafa0594f13471a77f"
+  name = "golang.org/x/sys"
+  packages = [
+    "windows",
+    "windows/registry",
+  ]
+  pruneopts = "UT"
+  revision = "98c5dad5d1a0e8a73845ecc8897d0bd56586511d"
+
+[[projects]]
+  branch = "v1"
+  digest = "1:341765c7e47a405badb01328b2fbdbdc8e4b4608eff53743efd9bd838c1318ad"
+  name = "gopkg.in/toast.v1"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "b700e246b8b6d3e13554091e540e1019e26389f1"
+
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
   input-imports = [
-    "github.com/0xAX/notificator",
     "github.com/beeker1121/goque",
+    "github.com/gen2brain/beeep",
     "github.com/getlantern/errors",
     "github.com/getlantern/systray",
     "github.com/shivylp/clipboard",
