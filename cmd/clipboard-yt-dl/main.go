@@ -1,16 +1,16 @@
 package main
 
 import (
-	"net/url"
-	"log"
-	"github.com/0xAX/notificator"
 	"fmt"
+	"github.com/0xAX/notificator"
 	"github.com/getlantern/systray"
+	"github.com/hebestreit/clipboard-yt-dl"
 	"github.com/hebestreit/clipboard-yt-dl/assets/icon"
 	"github.com/shivylp/clipboard"
-	"time"
-	"github.com/hebestreit/clipboard-yt-dl"
+	"log"
+	"net/url"
 	"os"
+	"time"
 )
 
 var (
@@ -33,29 +33,31 @@ func main() {
 }
 
 // main method to observe changes in clipboard and do stuff
-func observeChanges(changes chan string, stopCh chan struct{}, clipboardYtDl *clipboard_yt_dl.ClipboardYtDl) {
+func observeChanges(clipboardYtDl *clipboard_yt_dl.ClipboardYtDl) {
+	var currentValue string
 	for {
-		select {
-		case <-stopCh:
-			break
-		default:
-			change, ok := <-changes
-			if ok {
-				copiedUrl, err := url.Parse(change)
-				if err != nil || len(copiedUrl.Host) <= 0 {
-					continue
-				}
+		time.Sleep(time.Second)
 
-				_, err = clipboardYtDl.EnqueueVideo(copiedUrl)
-
-				if err != nil {
-					panic(err)
-				}
-
-				log.Printf("INFO: %s queued\n", copiedUrl.String())
-				updateSystray(clipboardYtDl.VideoLength())
-			}
+		newValue, err := clipboard.ReadAll()
+		if newValue == currentValue || err != nil {
+			continue
 		}
+
+		currentValue = newValue
+
+		copiedUrl, err := url.Parse(newValue)
+		if err != nil || len(copiedUrl.Host) <= 0 {
+			continue
+		}
+
+		_, err = clipboardYtDl.EnqueueVideo(copiedUrl)
+
+		if err != nil {
+			panic(err)
+		}
+
+		log.Printf("INFO: %s queued\n", copiedUrl.String())
+		updateSystray(clipboardYtDl.VideoLength())
 	}
 }
 
@@ -72,14 +74,6 @@ func updateSystray(length uint64) {
 
 // initialize menu items and queue
 func onReady() {
-	changes := make(chan string, 10)
-	stopCh := make(chan struct{})
-
-	clipboardYtDl = clipboard_yt_dl.NewClipboardYtDl()
-
-	go clipboard.Monitor(time.Second, stopCh, changes)
-	go observeChanges(changes, stopCh, clipboardYtDl)
-
 	systray.SetIcon(icon.Data)
 
 	queueLengthMenuItem = systray.AddMenuItem("Queued videos: %d", "Length of queued videos.")
@@ -87,11 +81,13 @@ func onReady() {
 
 	toggleDownloadMenuItem = systray.AddMenuItem("Start download", "Process queued videos.")
 	clearQueueMenuItem = systray.AddMenuItem("Clear queue", "Remove all items from queue.")
-	clearQueueMenuItem.Disable()
 
 	systray.AddSeparator()
 
 	quitMenuItem := systray.AddMenuItem("Quit", "Quits this app")
+
+	clipboardYtDl = clipboard_yt_dl.NewClipboardYtDl()
+	go observeChanges(clipboardYtDl)
 
 	updateSystray(clipboardYtDl.VideoLength())
 
@@ -110,7 +106,8 @@ func onReady() {
 				clipboardYtDl.StopQueue()
 			}
 		case <-clearQueueMenuItem.ClickedCh:
-			// TODO implement this
+			clipboardYtDl.ClearQueue()
+			updateSystray(clipboardYtDl.VideoLength())
 		case <-quitMenuItem.ClickedCh:
 			systray.Quit()
 			return

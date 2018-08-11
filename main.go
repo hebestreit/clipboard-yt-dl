@@ -2,8 +2,8 @@ package clipboard_yt_dl
 
 import (
 	"github.com/beeker1121/goque"
-	"net/url"
 	"log"
+	"net/url"
 	"time"
 )
 
@@ -65,6 +65,12 @@ func (c *ClipboardYtDl) StopQueue() {
 	close(c.stopCh)
 }
 
+// delete the queue database and open new queue
+func (c *ClipboardYtDl) ClearQueue() {
+	c.queue.Drop()
+	c.queue = openQueue()
+}
+
 // add video object to queue
 func (c *ClipboardYtDl) EnqueueVideo(url *url.URL) (*goque.Item, error) {
 	return c.queue.EnqueueString(url.String())
@@ -76,7 +82,7 @@ func (c *ClipboardYtDl) VideoLength() uint64 {
 }
 
 // this method will download url
-func (c *ClipboardYtDl) downloadVideo(url *url.URL) (*Video) {
+func (c *ClipboardYtDl) downloadVideo(url *url.URL) *Video {
 	log.Printf("INFO: %s downloading ... \n", url.String())
 
 	dl := YouTubeDl{}

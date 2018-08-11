@@ -40,6 +40,13 @@ Now you can find all binaries under ``$GOPATH/src/github.com/hebestreit/clipboar
     clipboard-yt-dl_linux
     clipboard-yt-dl_windows.exe
 
+## Trouble Shooting
+
+### extractor: youtube-dl is not in PATH
+
+This error occurs if you have not installed ``youtube-dl`` correctly and set location to your environment variables. Under Linux you can simply move to ``/usr/local/bin/youtube-dl``.
+For Windows check this answer on [stackoverflow.com](https://stackoverflow.com/a/41895179) and restart your system. ;-)
+
 # Dependencies
 
 This is a list of dependencies I'm using in this project.
