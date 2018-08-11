@@ -10,6 +10,7 @@ import (
 	"log"
 	"net/url"
 	"os"
+	"runtime"
 	"time"
 )
 
@@ -21,6 +22,8 @@ var (
 )
 
 func main() {
+	defer recoverPanic()
+
 	fileLog, err := os.OpenFile("debug.log", os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0644)
 	if err != nil {
 		log.Fatalln(err)
@@ -74,6 +77,8 @@ func updateSystray(length uint64) {
 
 // initialize menu items and queue
 func onReady() {
+	defer recoverPanic()
+
 	systray.SetIcon(icon.Data)
 
 	queueLengthMenuItem = systray.AddMenuItem("Queued videos: %d", "Length of queued videos.")
@@ -87,10 +92,14 @@ func onReady() {
 	quitMenuItem := systray.AddMenuItem("Quit", "Quits this app")
 
 	clipboardYtDl = clipboard_yt_dl.NewClipboardYtDl()
-	go observeChanges(clipboardYtDl)
+	go func() {
+		defer recoverPanic()
+		observeChanges(clipboardYtDl)
+	}()
 
 	updateSystray(clipboardYtDl.VideoLength())
 
+	stopQueueCh := make(chan struct{})
 	for {
 		select {
 		case <-toggleDownloadMenuItem.ClickedCh:
@@ -98,12 +107,15 @@ func onReady() {
 				toggleDownloadMenuItem.Check()
 				toggleDownloadMenuItem.SetTitle("Stop download")
 
-				clipboardYtDl.StartQueue(onVideoDownloaded)
+				go func() {
+					defer recoverPanic()
+					clipboardYtDl.StartQueue(stopQueueCh, onVideoDownloaded)
+				}()
 			} else {
 				toggleDownloadMenuItem.Uncheck()
 				toggleDownloadMenuItem.SetTitle("Start download")
 
-				clipboardYtDl.StopQueue()
+				clipboardYtDl.StopQueue(stopQueueCh)
 			}
 		case <-clearQueueMenuItem.ClickedCh:
 			clipboardYtDl.ClearQueue()
@@ -131,4 +143,19 @@ func pushNotification(video *clipboard_yt_dl.Video) error {
 func onVideoDownloaded(video *clipboard_yt_dl.Video, length uint64) {
 	pushNotification(video)
 	updateSystray(length)
+}
+
+// recover all panics and log them see: https://groups.google.com/d/msg/golang-nuts/jrsX1f3tXD8/lIbSPms_7uUJ
+func recoverPanic() {
+	err := recover()
+	if err != nil {
+		log.Println("Unrecovered Error:")
+		log.Println("  The following error was not properly recovered, please report this ASAP!")
+		log.Printf("  %#v\n", err)
+		log.Println("Stack Trace:")
+		buf := make([]byte, 4096)
+		buf = buf[:runtime.Stack(buf, true)]
+		log.Printf("%s\n", buf)
+		os.Exit(1)
+	}
 }

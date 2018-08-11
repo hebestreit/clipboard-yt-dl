@@ -28,10 +28,16 @@ Navigate in this folder and checkout this repository.
     $ cd $GOPATH/src/github.com/hebestreit
     $ git clone https://github.com/hebestreit/clipboard-yt-dl.git
 
-For this part you'll need docker to build application for all platforms.
+For this part you'll need Docker to build application for all platforms. See below how to compile without docker.
 
     $ cd clipboard-yt-dl
     $ make all
+
+Of course you can build it without Docker directly on your system. Be sure you've all required dev packages installed.
+
+    $ GOOS=linux CC=clang CXX=clang++ go build -o "bin/clipboard-yt-dl_linux" ./cmd/clipboard-yt-dl $*
+    $ GOOS=windows CC=x86_64-w64-mingw32-gcc CXX=x86_64-w64-mingw32-g++ go build -o "bin/clipboard-yt-dl_windows.exe" -ldflags "-H=windowsgui -extldflags=-s" ./cmd/clipboard-yt-dl $*
+    $ darwin CGO_LDFLAGS_ALLOW="-mmacosx-version-min.*" CC=o64-clang CXX=o64-clang++ go build -o "bin/clipboard-yt-dl_darwin.app" ./cmd/clipboard-yt-dl $*
 
 Now you can find all binaries under ``$GOPATH/src/github.com/hebestreit/clipboard-yt-dl/bin`` and start copying over the world!
 

@@ -28,41 +28,38 @@ type ClipboardYtDl struct {
 }
 
 // iterate over each item in queue if download is enabled
-func (c *ClipboardYtDl) StartQueue(callback func(video *Video, length uint64)) {
-	c.stopCh = make(chan struct{})
-	go func() {
-		for {
-			select {
-			case <-c.stopCh:
-				return
-			default:
-				time.Sleep(time.Second)
+func (c *ClipboardYtDl) StartQueue(stopCh <-chan struct{}, callback func(video *Video, length uint64)) {
+	for {
+		select {
+		case <-stopCh:
+			return
+		default:
+			time.Sleep(time.Second)
 
-				if c.queue.Length() > 0 {
-					item, err := c.queue.Dequeue()
-					if err != nil {
-						panic(err)
-					}
+			if c.queue.Length() > 0 {
+				item, err := c.queue.Dequeue()
+				if err != nil {
+					panic(err)
+				}
 
-					copiedUrl, err := url.Parse(item.ToString())
-					if err != nil {
-						panic(err)
-					}
+				copiedUrl, err := url.Parse(item.ToString())
+				if err != nil {
+					panic(err)
+				}
 
-					video := c.downloadVideo(copiedUrl)
+				video := c.downloadVideo(copiedUrl)
 
-					if video != nil {
-						callback(video, c.queue.Length())
-					}
+				if video != nil {
+					callback(video, c.queue.Length())
 				}
 			}
 		}
-	}()
+	}
 }
 
 // stop processing queue
-func (c *ClipboardYtDl) StopQueue() {
-	close(c.stopCh)
+func (c *ClipboardYtDl) StopQueue(stopCh chan struct{}) {
+	close(stopCh)
 }
 
 // delete the queue database and open new queue
