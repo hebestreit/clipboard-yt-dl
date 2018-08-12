@@ -70,6 +70,7 @@ func observeChanges(clipboardYtDl *clipboard_yt_dl.ClipboardYtDl) {
 // update systray menu items
 func updateSystray(length uint64) {
 	queueLengthMenuItem.SetTitle(fmt.Sprintf("Queued videos: %d", length))
+	systray.SetTooltip("")
 
 	if length > 0 {
 		clearQueueMenuItem.Show()
@@ -110,10 +111,15 @@ func onReady() {
 				toggleDownloadMenuItem.Check()
 				toggleDownloadMenuItem.SetTitle("Stop download")
 
+				cmdOutput := make(chan string)
 				go func() {
 					defer recoverPanic()
-					clipboardYtDl.StartQueue(stopQueueCh, onVideoDownloaded)
+					clipboardYtDl.StartQueue(stopQueueCh, cmdOutput, onVideoDownloaded)
 				}()
+
+				for {
+					systray.SetTooltip(<-cmdOutput)
+				}
 			} else {
 				toggleDownloadMenuItem.Uncheck()
 				toggleDownloadMenuItem.SetTitle("Start download")
@@ -172,7 +178,10 @@ func downloadThumbnail(video *clipboard_yt_dl.Video) (string, error) {
 
 // callback when video has been downloaded by queue
 func onVideoDownloaded(video *clipboard_yt_dl.Video, length uint64) {
-	pushNotification(video)
+	if video != nil {
+		pushNotification(video)
+	}
+
 	updateSystray(length)
 }
 

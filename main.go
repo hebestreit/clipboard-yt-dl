@@ -23,12 +23,12 @@ func openQueue() *goque.Queue {
 }
 
 type ClipboardYtDl struct {
-	queue  *goque.Queue
-	stopCh chan struct{}
+	queue     *goque.Queue
+	cmdOutput chan string
 }
 
 // iterate over each item in queue if download is enabled
-func (c *ClipboardYtDl) StartQueue(stopCh <-chan struct{}, callback func(video *Video, length uint64)) {
+func (c *ClipboardYtDl) StartQueue(stopCh <-chan struct{}, cmdOutput chan<- string, callback func(video *Video, length uint64)) {
 	for {
 		select {
 		case <-stopCh:
@@ -47,11 +47,9 @@ func (c *ClipboardYtDl) StartQueue(stopCh <-chan struct{}, callback func(video *
 					panic(err)
 				}
 
-				video := c.downloadVideo(copiedUrl)
+				video := c.downloadVideo(copiedUrl, cmdOutput)
 
-				if video != nil {
-					callback(video, c.queue.Length())
-				}
+				callback(video, c.queue.Length())
 			}
 		}
 	}
@@ -79,12 +77,12 @@ func (c *ClipboardYtDl) VideoLength() uint64 {
 }
 
 // this method will download url
-func (c *ClipboardYtDl) downloadVideo(url *url.URL) *Video {
+func (c *ClipboardYtDl) downloadVideo(url *url.URL, cmdOutput chan<- string) *Video {
 	log.Printf("INFO: %s downloading ... \n", url.String())
 
 	dl := YouTubeDl{}
-	video, err := dl.Download(url)
 
+	video, err := dl.FetchInformation(url)
 	if err != nil {
 		switch err {
 		case UnsupportedError, UnknownServiceError, SSLCertificateVerifyFailedError:
@@ -95,9 +93,24 @@ func (c *ClipboardYtDl) downloadVideo(url *url.URL) *Video {
 		}
 	}
 
-	log.Printf("INFO: %s finished download to \"%s\" \n", url.String(), video.Filename)
+	doneCh := make(chan bool)
+	errorCh := make(chan error)
+	go dl.Download(url, cmdOutput, doneCh, errorCh)
 
-	return video
+	select {
+	case err := <-errorCh:
+		switch err {
+		case UnsupportedError, UnknownServiceError, SSLCertificateVerifyFailedError:
+			log.Printf("ERROR: %s %s \n", url, err.Error())
+			return nil
+		default:
+			panic(err)
+		}
+	case <-doneCh:
+		log.Printf("INFO: %s finished download to \"%s\" \n", url.String(), video.Filename)
+
+		return video
+	}
 }
 
 // close queue database
