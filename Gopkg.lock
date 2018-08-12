@@ -143,7 +143,7 @@
   name = "github.com/shivylp/clipboard"
   packages = ["."]
   pruneopts = "UT"
-  revision = "be3b6bdc0e1508e1df593521ad4c67baa9714ab7"
+  revision = "bbf605fceedd7aa701cad551cbf9471600a171f2"
 
 [[projects]]
   branch = "master"
@@ -178,13 +178,12 @@
   revision = "98c5dad5d1a0e8a73845ecc8897d0bd56586511d"
 
 [[projects]]
-  branch = "bugfix/flashing-powershell-console"
+  branch = "v1"
   digest = "1:b71ccd8615521db4ea2f9381f55780a1312654f5d8431d2e58eca51c74110de2"
   name = "gopkg.in/toast.v1"
   packages = ["."]
   pruneopts = "UT"
-  revision = "4e8ea83e2e17e025f1ccb61a1024991c3caa9004"
-  source = "github.com/hebestreit/toast.git"
+  revision = "0a84660828b24d25b35525c9a1f1f51267f8da91"
 
 [solve-meta]
   analyzer-name = "dep"

@@ -76,11 +76,6 @@ func runCmd(args []string) ([]byte, error) {
 
 // Checks if youtube-dl exists
 func isCommandAvailable() bool {
-	_, err := runCmd([]string{"--version"})
-
-	if err != nil {
-		return false
-	}
-
-	return true
+	_, err := exec.LookPath(youtubeDlCmd)
+	return err == nil
 }

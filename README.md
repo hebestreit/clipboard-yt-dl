@@ -1,3 +1,7 @@
+<p align="center">
+    <img src="assets/clipboard-yt-dl.png" width="200" />
+</p>
+
 # Clipboard to youtube-dl
 
 This Go application will monitor your clipboard for urls and automatically starts download with [youtube-dl](https://github.com/rg3/youtube-dl/) ([list of supported sites](https://github.com/rg3/youtube-dl/blob/master/docs/supportedsites.md)). 
@@ -59,5 +63,4 @@ This is a list of dependencies I'm using in this project.
 
 * [github.com/shivylp/clipboard](https://github.com/shivylp/clipboard) for monitoring clipboard which is a fork of [github.com/atotto/clipboard](https://github.com/atotto/clipboard).
 * [github.com/gen2brain/beeep](https://github.com/gen2brain/beeep) sending notifications
-** currently I'm using my fork of [github.com/go-toast/toast](https://github.com/go-toast/toast) to fix flashing PowerShell on Windows
 * [github.com/getlantern/systray](https://github.com/getlantern/systray) menu item in systray for user interactions

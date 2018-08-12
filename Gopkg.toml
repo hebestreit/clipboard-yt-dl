@@ -37,11 +37,6 @@
   name = "github.com/gen2brain/beeep"
   branch = "master"
 
-[[override]]
-  name = "gopkg.in/toast.v1"
-  branch = "bugfix/flashing-powershell-console"
-  source = "github.com/hebestreit/toast.git"
-
 [[constraint]]
   name = "github.com/getlantern/systray"
   branch = "master"
