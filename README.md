@@ -5,7 +5,15 @@
 # Clipboard to youtube-dl
 
 This Go application will monitor your clipboard for urls and automatically starts download with [youtube-dl](https://github.com/rg3/youtube-dl/) ([list of supported sites](https://github.com/rg3/youtube-dl/blob/master/docs/supportedsites.md)). 
-After download has been finished you'll get a system notification with detailed information (currently only works with Linux). In your system tray you'll find a new icon to control this application.   
+After download has been finished you'll get a system notification with detailed information. In your system tray you'll find a new icon to control this application.
+
+<img src="assets/example.gif" width="386" />
+
+## Features
+
+* queue copied urls
+* start and stop download
+* push notifications
 
 **IMPORTANT**
 
