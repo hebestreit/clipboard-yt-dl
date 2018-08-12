@@ -1,11 +1,13 @@
 package clipboard_yt_dl
 
 import (
+	"encoding/json"
+	"fmt"
+	"github.com/getlantern/errors"
 	"net/url"
 	"os/exec"
-	"encoding/json"
-	"github.com/getlantern/errors"
 	"strings"
+	"syscall"
 )
 
 const (
@@ -13,19 +15,21 @@ const (
 )
 
 var (
+	CmdNotFoundInPath               = errors.New(fmt.Sprintf("extractor: %s is not in PATH", youtubeDlCmd))
 	UnsupportedError                = errors.New("extractor: unsupported video url")
 	SSLCertificateVerifyFailedError = errors.New("extractor: certificate verify failed")
 	UnknownServiceError             = errors.New("extractor: name or service not known")
 )
 
 type Video struct {
-	FullTitle string `json:"fulltitle"`
-	Id        string `json:"id"`
-	Filename  string `json:"_filename"`
+	FullTitle    string `json:"fulltitle"`
+	Id           string `json:"id"`
+	Filename     string `json:"_filename"`
+	ThumbnailURL string `json:"thumbnail"`
 }
 
 type Extractor interface {
-	Download(url *url.URL) (Video, error)
+	Download(url *url.URL) (*Video, error)
 }
 
 type YouTubeDl struct {
@@ -33,8 +37,11 @@ type YouTubeDl struct {
 
 // try to download url with youtube-dl command
 func (y *YouTubeDl) Download(url *url.URL) (*Video, error) {
-	args := []string{"--print-json", url.String()}
-	output, err := exec.Command(youtubeDlCmd, args...).CombinedOutput()
+	if !isCommandAvailable() {
+		panic(CmdNotFoundInPath)
+	}
+
+	output, err := runCmd([]string{"--print-json", "--no-warnings", url.String()})
 
 	if err != nil {
 		s := string(output)
@@ -57,4 +64,18 @@ func (y *YouTubeDl) Download(url *url.URL) (*Video, error) {
 	json.Unmarshal(output, &video)
 
 	return &video, nil
+}
+
+// run youtube-dl command
+func runCmd(args []string) ([]byte, error) {
+	cmd := exec.Command(youtubeDlCmd, args...)
+	cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
+
+	return cmd.CombinedOutput()
+}
+
+// Checks if youtube-dl exists
+func isCommandAvailable() bool {
+	_, err := exec.LookPath(youtubeDlCmd)
+	return err == nil
 }

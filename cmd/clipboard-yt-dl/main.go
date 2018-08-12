@@ -1,16 +1,20 @@
 package main
 
 import (
-	"net/url"
-	"log"
-	"github.com/0xAX/notificator"
 	"fmt"
+	"github.com/gen2brain/beeep"
 	"github.com/getlantern/systray"
+	"github.com/hebestreit/clipboard-yt-dl"
 	"github.com/hebestreit/clipboard-yt-dl/assets/icon"
 	"github.com/shivylp/clipboard"
-	"time"
-	"github.com/hebestreit/clipboard-yt-dl"
+	"io"
+	"io/ioutil"
+	"log"
+	"net/http"
+	"net/url"
 	"os"
+	"runtime"
+	"time"
 )
 
 var (
@@ -21,6 +25,8 @@ var (
 )
 
 func main() {
+	defer recoverPanic()
+
 	fileLog, err := os.OpenFile("debug.log", os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0644)
 	if err != nil {
 		log.Fatalln(err)
@@ -33,29 +39,31 @@ func main() {
 }
 
 // main method to observe changes in clipboard and do stuff
-func observeChanges(changes chan string, stopCh chan struct{}, clipboardYtDl *clipboard_yt_dl.ClipboardYtDl) {
+func observeChanges(clipboardYtDl *clipboard_yt_dl.ClipboardYtDl) {
+	var currentValue string
 	for {
-		select {
-		case <-stopCh:
-			break
-		default:
-			change, ok := <-changes
-			if ok {
-				copiedUrl, err := url.Parse(change)
-				if err != nil || len(copiedUrl.Host) <= 0 {
-					continue
-				}
+		time.Sleep(time.Second)
 
-				_, err = clipboardYtDl.EnqueueVideo(copiedUrl)
-
-				if err != nil {
-					panic(err)
-				}
-
-				log.Printf("INFO: %s queued\n", copiedUrl.String())
-				updateSystray(clipboardYtDl.VideoLength())
-			}
+		newValue, err := clipboard.ReadAll()
+		if newValue == currentValue || err != nil {
+			continue
 		}
+
+		currentValue = newValue
+
+		copiedUrl, err := url.Parse(newValue)
+		if err != nil || len(copiedUrl.Host) <= 0 {
+			continue
+		}
+
+		_, err = clipboardYtDl.EnqueueVideo(copiedUrl)
+
+		if err != nil {
+			panic(err)
+		}
+
+		log.Printf("INFO: %s queued\n", copiedUrl.String())
+		updateSystray(clipboardYtDl.VideoLength())
 	}
 }
 
@@ -72,13 +80,7 @@ func updateSystray(length uint64) {
 
 // initialize menu items and queue
 func onReady() {
-	changes := make(chan string, 10)
-	stopCh := make(chan struct{})
-
-	clipboardYtDl = clipboard_yt_dl.NewClipboardYtDl()
-
-	go clipboard.Monitor(time.Second, stopCh, changes)
-	go observeChanges(changes, stopCh, clipboardYtDl)
+	defer recoverPanic()
 
 	systray.SetIcon(icon.Data)
 
@@ -87,14 +89,20 @@ func onReady() {
 
 	toggleDownloadMenuItem = systray.AddMenuItem("Start download", "Process queued videos.")
 	clearQueueMenuItem = systray.AddMenuItem("Clear queue", "Remove all items from queue.")
-	clearQueueMenuItem.Disable()
 
 	systray.AddSeparator()
 
 	quitMenuItem := systray.AddMenuItem("Quit", "Quits this app")
 
+	clipboardYtDl = clipboard_yt_dl.NewClipboardYtDl()
+	go func() {
+		defer recoverPanic()
+		observeChanges(clipboardYtDl)
+	}()
+
 	updateSystray(clipboardYtDl.VideoLength())
 
+	stopQueueCh := make(chan struct{})
 	for {
 		select {
 		case <-toggleDownloadMenuItem.ClickedCh:
@@ -102,15 +110,19 @@ func onReady() {
 				toggleDownloadMenuItem.Check()
 				toggleDownloadMenuItem.SetTitle("Stop download")
 
-				clipboardYtDl.StartQueue(onVideoDownloaded)
+				go func() {
+					defer recoverPanic()
+					clipboardYtDl.StartQueue(stopQueueCh, onVideoDownloaded)
+				}()
 			} else {
 				toggleDownloadMenuItem.Uncheck()
 				toggleDownloadMenuItem.SetTitle("Start download")
 
-				clipboardYtDl.StopQueue()
+				clipboardYtDl.StopQueue(stopQueueCh)
 			}
 		case <-clearQueueMenuItem.ClickedCh:
-			// TODO implement this
+			clipboardYtDl.ClearQueue()
+			updateSystray(clipboardYtDl.VideoLength())
 		case <-quitMenuItem.ClickedCh:
 			systray.Quit()
 			return
@@ -127,18 +139,54 @@ func onExit() {
 
 // send push notification with video information
 func pushNotification(video *clipboard_yt_dl.Video) error {
-	notify := notificator.New(notificator.Options{})
+	var thumbnail string
+	if video.ThumbnailURL != "" {
+		var err error
+		thumbnail, err = downloadThumbnail(video)
+		if err != nil {
+			panic(err)
+		}
+	}
 
-	return notify.Push(
-		"Download finished",
-		fmt.Sprintf("Id: %s\nTitle: %s\nFile: %s", video.Id, video.FullTitle, video.Filename),
-		"",
-		notificator.UR_NORMAL,
-	)
+	return beeep.Notify("Download finished", video.FullTitle, thumbnail)
+}
+
+// download video thumbnail to temporary file
+func downloadThumbnail(video *clipboard_yt_dl.Video) (string, error) {
+	tmpFile, err := ioutil.TempFile("", video.Id)
+	defer tmpFile.Close()
+
+	resp, err := http.Get(video.ThumbnailURL)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+
+	_, err = io.Copy(tmpFile, resp.Body)
+	if err != nil {
+		return "", err
+	}
+
+	return tmpFile.Name(), nil
 }
 
 // callback when video has been downloaded by queue
 func onVideoDownloaded(video *clipboard_yt_dl.Video, length uint64) {
 	pushNotification(video)
 	updateSystray(length)
+}
+
+// recover all panics and log them see: https://groups.google.com/d/msg/golang-nuts/jrsX1f3tXD8/lIbSPms_7uUJ
+func recoverPanic() {
+	err := recover()
+	if err != nil {
+		log.Println("Unrecovered Error:")
+		log.Println("  The following error was not properly recovered, please report this ASAP!")
+		log.Printf("  %#v\n", err)
+		log.Println("Stack Trace:")
+		buf := make([]byte, 4096)
+		buf = buf[:runtime.Stack(buf, true)]
+		log.Printf("%s\n", buf)
+		os.Exit(1)
+	}
 }
