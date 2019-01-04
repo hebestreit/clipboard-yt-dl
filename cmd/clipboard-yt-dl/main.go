@@ -102,7 +102,7 @@ func onReady() {
 
 	updateSystray(clipboardYtDl.VideoLength())
 
-	stopQueueCh := make(chan struct{})
+	stopQueueCh := make(chan bool)
 	for {
 		select {
 		case <-toggleDownloadMenuItem.ClickedCh:
