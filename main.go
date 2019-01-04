@@ -28,7 +28,7 @@ type ClipboardYtDl struct {
 }
 
 // iterate over each item in queue if download is enabled
-func (c *ClipboardYtDl) StartQueue(stopCh <-chan struct{}, callback func(video *Video, length uint64)) {
+func (c *ClipboardYtDl) StartQueue(stopCh <-chan bool, callback func(video *Video, length uint64)) {
 	for {
 		select {
 		case <-stopCh:
@@ -58,8 +58,8 @@ func (c *ClipboardYtDl) StartQueue(stopCh <-chan struct{}, callback func(video *
 }
 
 // stop processing queue
-func (c *ClipboardYtDl) StopQueue(stopCh chan struct{}) {
-	close(stopCh)
+func (c *ClipboardYtDl) StopQueue(stopCh chan bool) {
+	stopCh <- true
 }
 
 // delete the queue database and open new queue
