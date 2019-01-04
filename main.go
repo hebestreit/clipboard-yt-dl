@@ -5,6 +5,10 @@ import (
 	"log"
 	"net/url"
 	"time"
+	"strings"
+	"fmt"
+	"github.com/jessevdk/go-flags"
+	"os"
 )
 
 // create new ClipboardYtDl instance
@@ -82,8 +86,13 @@ func (c *ClipboardYtDl) VideoLength() uint64 {
 func (c *ClipboardYtDl) downloadVideo(url *url.URL) *Video {
 	log.Printf("INFO: %s downloading ... \n", url.String())
 
+	opts, err := c.parseExtractorOptions()
+	if err != nil {
+		panic(err)
+	}
+
 	dl := YouTubeDl{}
-	video, err := dl.Download(url)
+	video, err := dl.Download(url, opts)
 
 	if err != nil {
 		switch err {
@@ -103,4 +112,35 @@ func (c *ClipboardYtDl) downloadVideo(url *url.URL) *Video {
 // close queue database
 func (c *ClipboardYtDl) CloseQueue() {
 	c.queue.Close()
+}
+
+// pass through command options to extractor command
+func (c *ClipboardYtDl) parseExtractorOptions() ([]string, error) {
+	var opts []string
+
+	parser := flags.NewParser(nil, flags.Default)
+	parser.UnknownOptionHandler = func(option string, arg flags.SplitArgument, args []string) ([]string, error) {
+		// filter out all options not starting with "--youtube-dl"
+		if !strings.HasPrefix(option, youtubeDlCmd) {
+			return args, nil
+		}
+
+		sanitizedOption := strings.TrimPrefix(option, youtubeDlCmd)
+
+		value, hasValue := arg.Value()
+		if hasValue {
+			sanitizedOption = fmt.Sprintf("%s=%s", sanitizedOption, value)
+		}
+
+		opts = append(opts, strings.Split(sanitizedOption, " ")...)
+
+		return args, nil
+	}
+
+	_, err := parser.ParseArgs(os.Args)
+	if err != nil {
+		return opts, err
+	}
+
+	return opts, nil
 }

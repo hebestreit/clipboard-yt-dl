@@ -23,6 +23,10 @@ Currently I can only support running this app under Windows and Linux.
 
 You can use all configurations of [youtube-dl](https://github.com/rg3/youtube-dl/) like video or audio format, quality, output directory and many more.
 
+It is also possible to pass through options to youtube-dl command like a different config-location to use multiple profiles. They will be identified by a prefix called `--youtube-dl`. Please be sure you're separating each options parameter by quotes!
+
+    clipboard-yt-dl_windows.exe "--youtube-dl--config-location C:\\Users\\Anwender\\Documents\\yt-dl\\audio.conf" "--youtube-dl--no-mtime"
+
 ## Building from sources
 
 ### Requirements
@@ -72,3 +76,4 @@ This is a list of dependencies I'm using in this project.
 * [github.com/shivylp/clipboard](https://github.com/shivylp/clipboard) for monitoring clipboard which is a fork of [github.com/atotto/clipboard](https://github.com/atotto/clipboard).
 * [github.com/gen2brain/beeep](https://github.com/gen2brain/beeep) sending notifications
 * [github.com/getlantern/systray](https://github.com/getlantern/systray) menu item in systray for user interactions
+* [github.com/jessevdk/go-flags](https://github.com/jessevdk/go-flags) parsing command line options in a better way
