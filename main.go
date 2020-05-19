@@ -2,14 +2,15 @@ package clipboard_yt_dl
 
 import (
 	"github.com/beeker1121/goque"
+	"github.com/hebestreit/clipboard-yt-dl/pkg/types"
 	"log"
 	"net/url"
 	"time"
 )
 
 // create new ClipboardYtDl instance
-func NewClipboardYtDl() *ClipboardYtDl {
-	return &ClipboardYtDl{queue: openQueue()}
+func NewClipboardYtDl(config *types.Config) *ClipboardYtDl {
+	return &ClipboardYtDl{queue: openQueue(), config: config}
 }
 
 // open queue database
@@ -23,8 +24,10 @@ func openQueue() *goque.Queue {
 }
 
 type ClipboardYtDl struct {
-	queue  *goque.Queue
-	stopCh chan struct{}
+	config  *types.Config
+	queue   *goque.Queue
+	stopCh  chan struct{}
+	profile string
 }
 
 // iterate over each item in queue if download is enabled
@@ -83,7 +86,12 @@ func (c *ClipboardYtDl) downloadVideo(url *url.URL) *Video {
 	log.Printf("INFO: %s downloading ... \n", url.String())
 
 	dl := YouTubeDl{}
-	video, err := dl.Download(url)
+	var cmdArgs []string
+	ap := c.GetCurrentProfile()
+	if ap != nil {
+		cmdArgs = ap.Args
+	}
+	video, err := dl.Download(url, cmdArgs)
 
 	if err != nil {
 		switch err {
@@ -103,4 +111,33 @@ func (c *ClipboardYtDl) downloadVideo(url *url.URL) *Video {
 // close queue database
 func (c *ClipboardYtDl) CloseQueue() {
 	c.queue.Close()
+}
+
+// set profile value
+func (c *ClipboardYtDl) SetProfile(profile string) {
+	c.profile = profile
+}
+
+// retrieve profile value
+func (c *ClipboardYtDl) GetProfile() string {
+	return c.profile
+}
+
+// retrieve current profile if set otherwise return default profile configuration
+func (c *ClipboardYtDl) GetCurrentProfile() *types.Profile {
+	profile := c.config.Default.Profile
+	if c.profile != "" {
+		profile = c.profile
+	}
+
+	if val, ok := c.config.Profile[profile]; ok {
+		return &val
+	}
+
+	return nil
+}
+
+// retrieve profile list
+func (c *ClipboardYtDl) GetProfiles() map[string]types.Profile {
+	return c.config.Profile
 }

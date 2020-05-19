@@ -1,0 +1,27 @@
+profile:
+  playlist:
+    title: Playlist
+    args:
+      - -o
+      - '~/Videos/%(playlist)s/%(playlist_index)s - %(title)s.%(ext)s'
+  video_temp:
+    title: Video (temp)
+    args:
+      - -o
+      - '/tmp/Videos/%(title)s.%(ext)s'
+  music:
+    title: Music
+    args:
+      - -o
+      - '~/Musik/%(title)s.%(ext)s'
+      - --audio-quality
+      - 0
+      - --audio-format
+      - mp3
+      - -x
+      - --add-metadata
+      - --metadata-from-title
+      - '%(artist)s - %(title)s'
+
+default:
+  profile: music

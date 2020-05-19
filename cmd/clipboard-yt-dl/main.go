@@ -6,13 +6,16 @@ import (
 	"github.com/getlantern/systray"
 	"github.com/hebestreit/clipboard-yt-dl"
 	"github.com/hebestreit/clipboard-yt-dl/assets/icon"
+	"github.com/hebestreit/clipboard-yt-dl/pkg/types"
 	"github.com/shivylp/clipboard"
+	"gopkg.in/yaml.v2"
 	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"net/url"
 	"os"
+	"path/filepath"
 	"runtime"
 	"time"
 )
@@ -27,6 +30,7 @@ var (
 func main() {
 	defer recoverPanic()
 
+	// TODO check why logging won't work on windows
 	fileLog, err := os.OpenFile("debug.log", os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0644)
 	if err != nil {
 		log.Fatalln(err)
@@ -45,6 +49,10 @@ func observeChanges(clipboardYtDl *clipboard_yt_dl.ClipboardYtDl) {
 		time.Sleep(time.Second)
 
 		newValue, err := clipboard.ReadAll()
+		if err != nil {
+			panic(err)
+		}
+
 		if newValue == currentValue || err != nil {
 			continue
 		}
@@ -78,6 +86,25 @@ func updateSystray(length uint64) {
 	}
 }
 
+func readConfigFile(filename string) (*types.Config, error) {
+	if _, err := os.Stat(filename); err != nil {
+		return nil, fmt.Errorf("config file \"%s\" does not exist or is a directory", filename)
+	}
+
+	configYaml, err := ioutil.ReadFile(filename)
+	if err != nil {
+		return nil, err
+	}
+
+	var config types.Config
+	err = yaml.Unmarshal(configYaml, &config)
+	if err != nil {
+		return nil, err
+	}
+
+	return &config, nil
+}
+
 // initialize menu items and queue
 func onReady() {
 	defer recoverPanic()
@@ -92,15 +119,59 @@ func onReady() {
 
 	systray.AddSeparator()
 
-	quitMenuItem := systray.AddMenuItem("Quit", "Quits this app")
+	dir, err := os.Getwd()
+	if err != nil {
+		panic(err)
+	}
 
-	clipboardYtDl = clipboard_yt_dl.NewClipboardYtDl()
+	// TODO config path as command option
+	configPath := filepath.Join(dir, "config.yml")
+	config, err := readConfigFile(configPath)
+	if err != nil {
+		panic(err)
+	}
+
+	// TODO validate config file
+	clipboardYtDl = clipboard_yt_dl.NewClipboardYtDl(config)
 	go func() {
 		defer recoverPanic()
 		observeChanges(clipboardYtDl)
 	}()
 
 	updateSystray(clipboardYtDl.VideoLength())
+
+	// render profile menu items
+	if len(clipboardYtDl.GetProfiles()) > 0 {
+		profileMenuItem := systray.AddMenuItem("Select a profile", "")
+		profileMenuItem.Disable()
+
+		updateCurrentProfile(profileMenuItem)
+
+		// render profile sub menu item and bind click events to change active profile
+		for name, p := range clipboardYtDl.GetProfiles() {
+			p := p
+			name := name
+			subItem := profileMenuItem.AddSubMenuItem(p.Title, "")
+			go func() {
+				for {
+					select {
+					case <-subItem.ClickedCh:
+						if clipboardYtDl.GetProfile() == name {
+							clipboardYtDl.SetProfile("")
+						} else {
+							clipboardYtDl.SetProfile(name)
+						}
+
+						updateCurrentProfile(profileMenuItem)
+					}
+				}
+			}()
+		}
+
+		systray.AddSeparator()
+	}
+
+	quitMenuItem := systray.AddMenuItem("Quit", "Quits this app")
 
 	stopQueueCh := make(chan bool)
 	for {
@@ -128,6 +199,17 @@ func onReady() {
 			return
 		}
 	}
+}
+
+// display current profile in profile menu item
+func updateCurrentProfile(profileMenuItem *systray.MenuItem) {
+	ap := clipboardYtDl.GetCurrentProfile()
+	if ap != nil {
+		profileMenuItem.SetTitle(fmt.Sprintf("Current profile: %s", ap.Title))
+		return
+	}
+
+	profileMenuItem.SetTitle("Select a profile")
 }
 
 // on exit method when app has been closed

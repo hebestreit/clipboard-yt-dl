@@ -14,6 +14,7 @@ After download has been finished you'll get a system notification with detailed 
 * queue copied urls
 * start and stop download
 * push notifications
+* configure different profiles
 
 **IMPORTANT**
 
@@ -21,7 +22,37 @@ Currently I can only support running this app under Windows and Linux.
  
 ## Configuration
 
-You can use all configurations of [youtube-dl](https://github.com/rg3/youtube-dl/) like video or audio format, quality, output directory and many more.
+This is a sample configuration file `config.yml`.
+
+    profile:
+      playlist:
+        title: Playlist
+        args:
+          - -o
+          - '~/Videos/%(playlist)s/%(playlist_index)s - %(title)s.%(ext)s'
+      video_temp:
+        title: Video (temp)
+        args:
+          - -o
+          - '/tmp/Videos/%(title)s.%(ext)s'
+      music:
+        title: Music
+        args:
+          - -o
+          - '~/Musik/%(title)s.%(ext)s'
+          - --audio-quality
+          - 0
+          - --audio-format
+          - mp3
+          - -x
+          - --add-metadata
+          - --metadata-from-title
+          - '%(artist)s - %(title)s'
+
+    default:
+      profile: music
+
+You can use all options of [youtube-dl](https://github.com/rg3/youtube-dl/) like video or audio format, quality, output directory and pass them as `args` inside of a profile.
 
 ## Building from sources
 

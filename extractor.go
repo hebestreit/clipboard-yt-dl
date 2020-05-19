@@ -29,19 +29,19 @@ type Video struct {
 }
 
 type Extractor interface {
-	Download(url *url.URL) (*Video, error)
+	Download(url *url.URL, cmdArgs []string) (*Video, error)
 }
 
 type YouTubeDl struct {
 }
 
 // try to download url with youtube-dl command
-func (y *YouTubeDl) Download(url *url.URL) (*Video, error) {
+func (y *YouTubeDl) Download(url *url.URL, cmdArgs []string) (*Video, error) {
 	if !isCommandAvailable() {
 		panic(CmdNotFoundInPath)
 	}
 
-	output, err := runCmd([]string{"--print-json", "--no-warnings", url.String()})
+	output, err := runCmd(append(cmdArgs, []string{"--print-json", "--no-warnings", url.String()}...))
 
 	if err != nil {
 		s := string(output)
@@ -69,7 +69,9 @@ func (y *YouTubeDl) Download(url *url.URL) (*Video, error) {
 // run youtube-dl command
 func runCmd(args []string) ([]byte, error) {
 	cmd := exec.Command(youtubeDlCmd, args...)
-	cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
+	//TODO do we need this anymore for Windows?
+	//cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
+	cmd.SysProcAttr = &syscall.SysProcAttr{}
 
 	return cmd.CombinedOutput()
 }
