@@ -2,10 +2,8 @@
 
 set -xe
 
-PROJECT_ROOT="${1}"
-PACKAGE="${2}"
-PACKAGE_BASENAME="$(basename "${2}")"
-BUILD_OUTPUT="/go/src/${PROJECT_ROOT}/${3}/${PACKAGE_BASENAME}"
+PACKAGE="${1}"
+BUILD_OUTPUT="/go/src/${PACKAGE}/${2}"
 
 shift
 shift

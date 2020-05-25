@@ -31,10 +31,11 @@ type ClipboardYtDl struct {
 }
 
 // iterate over each item in queue if download is enabled
-func (c *ClipboardYtDl) StartQueue(stopCh <-chan bool, callback func(video *Video, length uint64)) {
+func (c *ClipboardYtDl) StartQueue(stopCh <-chan bool, callbackStarted func(url *url.URL), callbackFinished func(video *Video, length uint64)) {
 	for {
 		select {
 		case <-stopCh:
+			// TODO cancel running youtube-dl process
 			return
 		default:
 			time.Sleep(time.Second)
@@ -50,10 +51,12 @@ func (c *ClipboardYtDl) StartQueue(stopCh <-chan bool, callback func(video *Vide
 					panic(err)
 				}
 
+				callbackStarted(copiedUrl)
+
 				video := c.downloadVideo(copiedUrl)
 
 				if video != nil {
-					callback(video, c.queue.Length())
+					callbackFinished(video, c.queue.Length())
 				}
 			}
 		}
@@ -73,6 +76,7 @@ func (c *ClipboardYtDl) ClearQueue() {
 
 // add video object to queue
 func (c *ClipboardYtDl) EnqueueVideo(url *url.URL) (*goque.Item, error) {
+	c.queue.Peek()
 	return c.queue.EnqueueString(url.String())
 }
 
@@ -87,9 +91,9 @@ func (c *ClipboardYtDl) downloadVideo(url *url.URL) *Video {
 
 	dl := YouTubeDl{}
 	var cmdArgs []string
-	ap := c.GetCurrentProfile()
-	if ap != nil {
-		cmdArgs = ap.Args
+	cp := c.GetCurrentProfile()
+	if cp != nil {
+		cmdArgs = cp.Args
 	}
 	video, err := dl.Download(url, cmdArgs)
 
@@ -123,14 +127,20 @@ func (c *ClipboardYtDl) GetProfile() string {
 	return c.profile
 }
 
+// retrieve default profile value
+func (c *ClipboardYtDl) GetDefaultProfile() string {
+	return c.config.Default.Profile
+}
+
 // retrieve current profile if set otherwise return default profile configuration
 func (c *ClipboardYtDl) GetCurrentProfile() *types.Profile {
-	profile := c.config.Default.Profile
+	name := c.config.Default.Profile
 	if c.profile != "" {
-		profile = c.profile
+		name = c.profile
 	}
 
-	if val, ok := c.config.Profile[profile]; ok {
+	if val, ok := c.config.Profile[name]; ok {
+		val.Name = name
 		return &val
 	}
 

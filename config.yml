@@ -4,14 +4,16 @@ profile:
     args:
       - -o
       - '~/Videos/%(playlist)s/%(playlist_index)s - %(title)s.%(ext)s'
-  video_temp:
-    title: Video (temp)
+  video:
+    title: Video
     args:
+      - --no-playlist
       - -o
-      - '/tmp/Videos/%(title)s.%(ext)s'
+      - '~/Videos/%(title)s.%(ext)s'
   music:
     title: Music
     args:
+      - --no-playlist
       - -o
       - '~/Musik/%(title)s.%(ext)s'
       - --audio-quality

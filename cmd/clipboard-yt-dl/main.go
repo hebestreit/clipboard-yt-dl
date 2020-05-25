@@ -7,7 +7,6 @@ import (
 	"github.com/hebestreit/clipboard-yt-dl"
 	"github.com/hebestreit/clipboard-yt-dl/assets/icon"
 	"github.com/hebestreit/clipboard-yt-dl/pkg/types"
-	"github.com/shivylp/clipboard"
 	"gopkg.in/yaml.v2"
 	"io"
 	"io/ioutil"
@@ -25,12 +24,14 @@ var (
 	queueLengthMenuItem    *systray.MenuItem
 	toggleDownloadMenuItem *systray.MenuItem
 	clearQueueMenuItem     *systray.MenuItem
+	profileMenuItem        *systray.MenuItem
+	checkedProfileItem     *systray.MenuItem
+	defaultProfileItem     *systray.MenuItem
 )
 
 func main() {
 	defer recoverPanic()
 
-	// TODO check why logging won't work on windows
 	fileLog, err := os.OpenFile("debug.log", os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0644)
 	if err != nil {
 		log.Fatalln(err)
@@ -48,12 +49,12 @@ func observeChanges(clipboardYtDl *clipboard_yt_dl.ClipboardYtDl) {
 	for {
 		time.Sleep(time.Second)
 
-		newValue, err := clipboard.ReadAll()
+		newValue, err := clipboardReadAll()
 		if err != nil {
 			panic(err)
 		}
 
-		if newValue == currentValue || err != nil {
+		if newValue == currentValue {
 			continue
 		}
 
@@ -77,8 +78,9 @@ func observeChanges(clipboardYtDl *clipboard_yt_dl.ClipboardYtDl) {
 
 // update systray menu items
 func updateSystray(length uint64) {
-	queueLengthMenuItem.SetTitle(fmt.Sprintf("Queued videos: %d", length))
+	systray.SetTooltip("")
 
+	queueLengthMenuItem.SetTitle(fmt.Sprintf("Queued videos: %d", length))
 	if length > 0 {
 		clearQueueMenuItem.Show()
 	} else {
@@ -142,31 +144,44 @@ func onReady() {
 
 	// render profile menu items
 	if len(clipboardYtDl.GetProfiles()) > 0 {
-		profileMenuItem := systray.AddMenuItem("Select a profile", "")
-		profileMenuItem.Disable()
+		profileMenuItem = systray.AddMenuItem("Select a profile", "")
 
-		updateCurrentProfile(profileMenuItem)
+		updateCurrentProfile()
 
 		// render profile sub menu item and bind click events to change active profile
 		for name, p := range clipboardYtDl.GetProfiles() {
 			p := p
 			name := name
 			subItem := profileMenuItem.AddSubMenuItem(p.Title, "")
+
+			if name == clipboardYtDl.GetDefaultProfile() {
+				defaultProfileItem = subItem
+			}
+
 			go func() {
 				for {
 					select {
 					case <-subItem.ClickedCh:
+						if checkedProfileItem != nil {
+							checkedProfileItem.Uncheck()
+						}
+
 						if clipboardYtDl.GetProfile() == name {
-							clipboardYtDl.SetProfile("")
+							setDefaultProfile()
 						} else {
+							subItem.Check()
+							checkedProfileItem = subItem
+
 							clipboardYtDl.SetProfile(name)
 						}
 
-						updateCurrentProfile(profileMenuItem)
+						updateCurrentProfile()
 					}
 				}
 			}()
 		}
+
+		setDefaultProfile()
 
 		systray.AddSeparator()
 	}
@@ -183,7 +198,7 @@ func onReady() {
 
 				go func() {
 					defer recoverPanic()
-					clipboardYtDl.StartQueue(stopQueueCh, onVideoDownloaded)
+					clipboardYtDl.StartQueue(stopQueueCh, onVideoDownloadStarted, onVideoDownloadFinished)
 				}()
 			} else {
 				toggleDownloadMenuItem.Uncheck()
@@ -201,11 +216,23 @@ func onReady() {
 	}
 }
 
+// reset profile and update profile sub menu
+func setDefaultProfile() {
+	clipboardYtDl.SetProfile("")
+
+	if defaultProfileItem == nil {
+		return
+	}
+
+	defaultProfileItem.Check()
+	checkedProfileItem = defaultProfileItem
+}
+
 // display current profile in profile menu item
-func updateCurrentProfile(profileMenuItem *systray.MenuItem) {
-	ap := clipboardYtDl.GetCurrentProfile()
-	if ap != nil {
-		profileMenuItem.SetTitle(fmt.Sprintf("Current profile: %s", ap.Title))
+func updateCurrentProfile() {
+	cp := clipboardYtDl.GetCurrentProfile()
+	if cp != nil {
+		profileMenuItem.SetTitle(fmt.Sprintf("Current profile: %s", cp.Title))
 		return
 	}
 
@@ -252,8 +279,13 @@ func downloadThumbnail(video *clipboard_yt_dl.Video) (string, error) {
 	return tmpFile.Name(), nil
 }
 
-// callback when video has been downloaded by queue
-func onVideoDownloaded(video *clipboard_yt_dl.Video, length uint64) {
+// callback when video download has been started
+func onVideoDownloadStarted(url *url.URL) {
+	systray.SetTooltip(fmt.Sprintf("Downloading: %s", url))
+}
+
+// callback when video download has been finished
+func onVideoDownloadFinished(video *clipboard_yt_dl.Video, length uint64) {
 	pushNotification(video)
 	updateSystray(length)
 }
@@ -269,6 +301,7 @@ func recoverPanic() {
 		buf := make([]byte, 4096)
 		buf = buf[:runtime.Stack(buf, true)]
 		log.Printf("%s\n", buf)
+		// TODO don't exit program for "soft" errors and push a notification instead
 		os.Exit(1)
 	}
 }

@@ -6,10 +6,11 @@ type Config struct {
 }
 
 type Default struct {
-	Profile       string
+	Profile string
 }
 
 type Profile struct {
 	Title string
+	Name  string
 	Args  []string
 }

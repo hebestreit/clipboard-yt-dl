@@ -7,7 +7,6 @@ import (
 	"net/url"
 	"os/exec"
 	"strings"
-	"syscall"
 )
 
 const (
@@ -64,16 +63,6 @@ func (y *YouTubeDl) Download(url *url.URL, cmdArgs []string) (*Video, error) {
 	json.Unmarshal(output, &video)
 
 	return &video, nil
-}
-
-// run youtube-dl command
-func runCmd(args []string) ([]byte, error) {
-	cmd := exec.Command(youtubeDlCmd, args...)
-	//TODO do we need this anymore for Windows?
-	//cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
-	cmd.SysProcAttr = &syscall.SysProcAttr{}
-
-	return cmd.CombinedOutput()
 }
 
 // Checks if youtube-dl exists
